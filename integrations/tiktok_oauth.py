@@ -292,7 +292,8 @@ h1{{color:#fff;}} a{{color:#69b4ff;}} p{{color:#888;}}</style></head>
 
 def create_web_app() -> web.Application:
     from integrations.gmail_oauth      import handle_gmail_auth, handle_gmail_callback
-    from integrations.instagram_oauth  import handle_instagram_auth, handle_instagram_callback
+    from integrations.instagram_oauth  import (handle_instagram_auth, handle_instagram_callback,
+                                               handle_data_deletion, handle_deletion_status)
     from dashboard import handle_dashboard, handle_api_status
     app = web.Application()
     app.router.add_get("/",                    handle_dashboard)
@@ -302,6 +303,8 @@ def create_web_app() -> web.Application:
     app.router.add_get("/tiktok/callback",     handle_callback)
     app.router.add_get("/gmail/auth",          handle_gmail_auth)
     app.router.add_get("/gmail/callback",      handle_gmail_callback)
-    app.router.add_get("/instagram/auth",      handle_instagram_auth)
-    app.router.add_get("/instagram/callback",  handle_instagram_callback)
+    app.router.add_get("/instagram/auth",             handle_instagram_auth)
+    app.router.add_get("/instagram/callback",         handle_instagram_callback)
+    app.router.add_post("/instagram/data-deletion",   handle_data_deletion)
+    app.router.add_get("/instagram/deletion-status",  handle_deletion_status)
     return app

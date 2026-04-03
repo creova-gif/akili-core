@@ -49,6 +49,41 @@ def _redirect_uri() -> str:
     return f"https://{domain}/instagram/callback"
 
 
+async def handle_data_deletion(request: web.Request) -> web.Response:
+    """
+    Meta-required Data Deletion Callback.
+    Facebook sends a signed_request POST when a user asks Meta to delete their data.
+    AKILI holds no user data — respond with a confirmation URL.
+    """
+    domain = os.environ.get("REPLIT_DEV_DOMAIN", "localhost:8080")
+    confirmation_code = secrets_mod.token_hex(8)
+    status_url = f"https://{domain}/instagram/deletion-status?code={confirmation_code}"
+    log.info(f"[Instagram] Data deletion request received — code: {confirmation_code}")
+    return web.json_response({
+        "url":               status_url,
+        "confirmation_code": confirmation_code,
+    })
+
+
+async def handle_deletion_status(request: web.Request) -> web.Response:
+    """Status page Meta checks after data deletion confirmation."""
+    code = request.rel_url.query.get("code", "unknown")
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>AKILI — Data Deletion</title>
+<style>body{{font-family:monospace;background:#080A0F;color:#F0EDE8;
+display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}}
+.box{{background:#0D1018;border:1px solid #333;border-radius:16px;padding:32px;max-width:480px;text-align:center;}}
+h1{{color:#22C55E;}} p{{color:#6B7280;font-size:13px;}}
+</style></head>
+<body><div class="box">
+<h1>✅ Data Deletion Confirmed</h1>
+<p>Confirmation code: <strong style="color:#E8C547">{code}</strong></p>
+<p>AKILI (creova.one) does not store personal Facebook or Instagram user data.<br>
+All tokens are used solely for authorized API calls on behalf of the account owner.</p>
+</div></body></html>"""
+    return web.Response(text=html, content_type="text/html")
+
+
 async def handle_instagram_auth(request: web.Request) -> web.Response:
     """Step 1 — Redirect to Meta/Facebook OAuth."""
     app_id = _app_id()
