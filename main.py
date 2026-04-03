@@ -17,6 +17,7 @@ from agents.reach import ReachAgent
 from agents.intel import IntelAgent
 from agents.amplify import AmplifyAgent
 from memory.manager import MemoryManager
+from integrations import IntegrationHub
 
 # ── Logging ──────────────────────────────────────────────────
 os.makedirs("logs", exist_ok=True)
@@ -129,14 +130,33 @@ class AkiliCore:
         self.reach   = ReachAgent(ANTHROPIC_KEY, self.memory)
         self.intel   = IntelAgent(ANTHROPIC_KEY, self.memory)
         self.amplify = AmplifyAgent(ANTHROPIC_KEY, self.memory)
+        self.hub     = IntegrationHub()
         self.identity = AKILI_IDENTITY
-        log.info("AKILI CORE initialized — all 5 agents loaded")
+        log.info("AKILI CORE initialized — all 5 agents + integration hub loaded")
 
     async def route_command(self, text: str, chat_id: str) -> str:
         """Routes Justin's commands to the right agent."""
         text_lower = text.lower()
 
-        if any(w in text_lower for w in ["security", "github", "repo", "uptime", "breach", "key", "protect", "shield"]):
+        # ── Phase 2: Integration hub commands ─────────────────
+        if any(w in text_lower for w in ["health check", "integration status", "platform status", "all platforms"]):
+            return await self.hub.full_health_check()
+
+        elif any(w in text_lower for w in ["follower count", "follower snapshot", "follower numbers"]):
+            return await self.hub.get_all_follower_counts()
+
+        elif any(w in text_lower for w in ["github scan", "repo scan", "github status"]):
+            return await self.hub.github.format_status_report()
+
+        elif "snapchat" in text_lower and any(w in text_lower for w in ["plan", "content", "today", "post"]):
+            plan = await self.hub.snapchat.generate_daily_content()
+            return self.hub.snapchat.format_telegram_reminder(plan)
+
+        elif "snapchat" in text_lower and "checklist" in text_lower:
+            return self.hub.snapchat.creator_program_checklist()
+
+        # ── Phase 1: Agent routing ─────────────────────────────
+        elif any(w in text_lower for w in ["security", "github", "repo", "uptime", "breach", "key", "protect", "shield"]):
             return await self.shield.handle(text)
 
         elif any(w in text_lower for w in ["post", "instagram", "twitter", "linkedin", "tiktok", "snap", "social", "schedule", "content", "calendar"]):
@@ -148,7 +168,7 @@ class AkiliCore:
         elif any(w in text_lower for w in ["research", "lead", "vc", "investor", "competitor", "market", "brief", "intel"]):
             return await self.intel.handle(text)
 
-        elif any(w in text_lower for w in ["music", "stream", "spotify", "distrokid", "promote", "amplify", "growth", "experiment", "release", "campaign"]):
+        elif any(w in text_lower for w in ["music", "stream", "spotify", "distrokid", "promote", "amplify", "growth", "experiment", "release"]):
             return await self.amplify.handle(text)
 
         else:
@@ -165,7 +185,7 @@ class AkiliCore:
         )
         return response.content[0].text
 
-    async def heartbeat(self):
+    async def heartbeat(self, app=None):
         """Runs every 30 minutes — checks all agents autonomously."""
         while True:
             log.info(f"[HEARTBEAT] {datetime.now().strftime('%H:%M')} — checking all agents")
@@ -173,9 +193,29 @@ class AkiliCore:
                 shield_alert = await self.shield.heartbeat_check()
                 await self.pulse.heartbeat_check()
                 await self.amplify.heartbeat_check()
+
+                # Phase 2: GitHub scan during heartbeat
+                try:
+                    gh_scan = await self.hub.github.full_org_scan()
+                    if gh_scan.get("alerts"):
+                        gh_alerts = "\n".join(gh_scan["alerts"])
+                        log.warning(f"[GITHUB ALERT] {gh_alerts}")
+                        if app and JUSTIN_CHAT_ID:
+                            await app.bot.send_message(
+                                chat_id=JUSTIN_CHAT_ID,
+                                text=f"🐙 GITHUB ALERT\n\n{gh_alerts}"
+                            )
+                except Exception as e:
+                    log.error(f"[GITHUB HEARTBEAT ERROR] {e}")
+
                 self.memory.daily_log(f"Heartbeat OK at {datetime.now().isoformat()}")
                 if shield_alert:
                     log.warning(f"[SHIELD ALERT] {shield_alert}")
+                    if app and JUSTIN_CHAT_ID:
+                        await app.bot.send_message(
+                            chat_id=JUSTIN_CHAT_ID,
+                            text=shield_alert
+                        )
             except Exception as e:
                 log.error(f"[HEARTBEAT ERROR] {e}")
             await asyncio.sleep(1800)
@@ -204,12 +244,18 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
         return
     await update.message.reply_text(
-        "⚡ AKILI ONLINE\n\nAll 5 agents active:\n"
-        "🛡 SHIELD — Security\n"
-        "📡 PULSE — Social Media\n"
-        "📨 REACH — Comms\n"
-        "🔍 INTEL — Research\n"
-        "🔊 AMPLIFY — Growth\n\n"
+        "⚡ AKILI ONLINE — Phase 2\n\n"
+        "5 agents active:\n"
+        "🛡 SHIELD — Security + GitHub (14 repos)\n"
+        "📡 PULSE — Social Media (IG · Twitter · LinkedIn · TikTok · Snap · FB)\n"
+        "📨 REACH — Email + DMs + Repurposing\n"
+        "🔍 INTEL — Research + Leads + Daily Briefs\n"
+        "🔊 AMPLIFY — Music Promotion + Growth\n\n"
+        "Phase 2 commands:\n"
+        "  'health check' — all platform status\n"
+        "  'follower count' — snapshot across platforms\n"
+        "  'github scan' — all 14 repos\n"
+        "  'snapchat plan' — today's content\n\n"
         "Send me any command, Justin."
     )
 
@@ -265,7 +311,7 @@ async def main():
         await app.start()
         await app.updater.start_polling(drop_pending_updates=True)
 
-        asyncio.create_task(akili.heartbeat())
+        asyncio.create_task(akili.heartbeat(app))
         asyncio.create_task(akili.morning_brief(app))
 
         # Keep running until interrupted

@@ -1,0 +1,149 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.p2{padding:1.5rem 0;font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.logo{font-size:11px;font-weight:500;letter-spacing:0.12em;color:var(--color-text-secondary);text-transform:uppercase}
+.badge{font-size:10px;padding:2px 8px;border-radius:4px;background:#E1F5EE;color:#0F6E56;font-weight:500}
+.label{font-size:10px;font-weight:500;letter-spacing:0.1em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:10px}
+
+.wave{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:1.75rem}
+.wcard{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:0.875rem;background:var(--color-background-primary)}
+.wnum{font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;display:inline-block;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em}
+.w1{background:#E6F1FB;color:#185FA5}
+.w2{background:#FAEEDA;color:#854F0B}
+.w3{background:#F1EFE8;color:#5F5E5A}
+.wname{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.wsub{font-size:11px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.5}
+.wlist{display:flex;flex-direction:column;gap:3px}
+.wi{font-size:11px;color:var(--color-text-tertiary);padding:3px 0;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between}
+.wi:last-child{border:none}
+.wi-name{color:var(--color-text-secondary)}
+.wi-status{font-size:10px}
+.s-now{color:#3B6D11}
+.s-next{color:#854F0B}
+.s-later{color:#888780}
+
+.integrations{display:flex;flex-direction:column;gap:6px;margin-bottom:1.75rem}
+.intg{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);background:var(--color-background-primary);cursor:pointer;transition:border-color 0.12s}
+.intg:hover{border-color:var(--color-border-secondary)}
+.intg-icon{width:32px;height:32px;border-radius:var(--border-radius-md);display:flex;align-items:center;justify-content:center;font-size:14px}
+.intg-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.intg-desc{font-size:11px;color:var(--color-text-secondary)}
+.intg-tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px}
+.t-free{background:#EAF3DE;color:#3B6D11}
+.t-paid{background:#FAEEDA;color:#854F0B}
+.t-freemium{background:#E6F1FB;color:#185FA5}
+
+.cost-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:1.75rem}
+.cst{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:0.75rem}
+.cst-label{font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px}
+.cst-val{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.cst-sub{font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:11px;padding:4px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:20px;cursor:pointer;color:var(--color-text-secondary)}
+.pill:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
+</style>
+
+<div class="p2">
+<div class="topbar">
+  <div class="logo">Akili Phase 2 — Real API Connections</div>
+  <div class="badge">Akili online ✓</div>
+</div>
+
+<div class="label">3 waves — build in this order</div>
+<div class="wave">
+  <div class="wcard">
+    <div class="wnum w1">Wave 1 · This week</div>
+    <div class="wname">Social posting</div>
+    <div class="wsub">PULSE gets real hands — actually posts to your accounts</div>
+    <div class="wlist">
+      <div class="wi"><span class="wi-name">Instagram Graph API</span><span class="wi-status s-now">Build now</span></div>
+      <div class="wi"><span class="wi-name">Twitter/X API v2</span><span class="wi-status s-now">Build now</span></div>
+      <div class="wi"><span class="wi-name">LinkedIn API</span><span class="wi-status s-now">Build now</span></div>
+    </div>
+  </div>
+  <div class="wcard">
+    <div class="wnum w2">Wave 2 · Next week</div>
+    <div class="wname">Comms + Email</div>
+    <div class="wsub">REACH handles email, DMs, WhatsApp while you sleep</div>
+    <div class="wlist">
+      <div class="wi"><span class="wi-name">Gmail API</span><span class="wi-status s-next">Wave 2</span></div>
+      <div class="wi"><span class="wi-name">WhatsApp Business API</span><span class="wi-status s-next">Wave 2</span></div>
+      <div class="wi"><span class="wi-name">GitHub token</span><span class="wi-status s-next">Wave 2</span></div>
+    </div>
+  </div>
+  <div class="wcard">
+    <div class="wnum w3">Wave 3 · Week 3</div>
+    <div class="wname">Music + Analytics</div>
+    <div class="wsub">AMPLIFY tracks streams, runs experiments with real data</div>
+    <div class="wlist">
+      <div class="wi"><span class="wi-name">Spotify for Artists</span><span class="wi-status s-later">Wave 3</span></div>
+      <div class="wi"><span class="wi-name">TikTok API</span><span class="wi-status s-later">Wave 3</span></div>
+      <div class="wi"><span class="wi-name">PostHog analytics</span><span class="wi-status s-later">Wave 3</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="label">Wave 1 integrations — full breakdown</div>
+<div class="integrations">
+  <div class="intg" onclick="sendPrompt('Build the Instagram Graph API integration for Akili PULSE agent: how to get the access token, what endpoints to use for posting to @jj_mafie, @creovasolutions, and @creativeinnovation__, and give me the complete instagram.py module to add to Akili')">
+    <div class="intg-icon" style="background:#FAECE7">📸</div>
+    <div>
+      <div class="intg-name">Instagram Graph API</div>
+      <div class="intg-desc">Post to @jj_mafie · @creovasolutions · @creativeinnovation__ · @sankofastudio__</div>
+    </div>
+    <div class="intg-tag t-free">Free</div>
+  </div>
+  <div class="intg" onclick="sendPrompt('Build the Twitter/X API v2 integration for Akili PULSE agent: how to get API keys for Justin Mafie account, the complete twitter.py module for posting tweets and threads, and how to monitor mentions for REACH agent')">
+    <div class="intg-icon" style="background:#E6F1FB">🐦</div>
+    <div>
+      <div class="intg-name">Twitter/X API v2</div>
+      <div class="intg-desc">Post tweets + threads · monitor mentions · auto-engage</div>
+    </div>
+    <div class="intg-tag t-freemium">Free tier</div>
+  </div>
+  <div class="intg" onclick="sendPrompt('Build the LinkedIn API integration for Akili PULSE agent: how to get OAuth token for Justin Mafie and CREOVA Solutions company page, complete linkedin.py module for posting, and what the LinkedIn API actually allows for automation')">
+    <div class="intg-icon" style="background:#E1F5EE">💼</div>
+    <div>
+      <div class="intg-name">LinkedIn API</div>
+      <div class="intg-desc">Post to Justin Mafie profile + CREOVA Solutions company page</div>
+    </div>
+    <div class="intg-tag t-free">Free</div>
+  </div>
+  <div class="intg" onclick="sendPrompt('Build the Gmail API integration for Akili REACH agent: OAuth setup, how to read and auto-reply to emails in Justin voice, flag urgent emails to Telegram, and the complete gmail.py module')">
+    <div class="intg-icon" style="background:#FAEEDA">📧</div>
+    <div>
+      <div class="intg-name">Gmail API</div>
+      <div class="intg-desc">Read + reply to emails · flag urgent to Telegram · marketing sends</div>
+    </div>
+    <div class="intg-tag t-free">Free</div>
+  </div>
+  <div class="intg" onclick="sendPrompt('Build the GitHub API integration for Akili SHIELD agent: how to get a personal access token for creova-gif org, the complete github_monitor.py module that checks all 14 repos for issues, PRs, and deployment status every 30 minutes')">
+    <div class="intg-icon" style="background:#F1EFE8">🐙</div>
+    <div>
+      <div class="intg-name">GitHub API</div>
+      <div class="intg-desc">Monitor all 14 creova-gif repos · PR alerts · deployment status</div>
+    </div>
+    <div class="intg-tag t-free">Free</div>
+  </div>
+</div>
+
+<div class="label">Phase 2 cost</div>
+<div class="cost-row">
+  <div class="cst"><div class="cst-label">Instagram API</div><div class="cst-val">$0</div><div class="cst-sub">Free with Meta Business</div></div>
+  <div class="cst"><div class="cst-label">Twitter/X API</div><div class="cst-val">$0</div><div class="cst-sub">Free tier: 1,500 tweets/mo</div></div>
+  <div class="cst"><div class="cst-label">LinkedIn API</div><div class="cst-val">$0</div><div class="cst-sub">Free for personal + pages</div></div>
+  <div class="cst"><div class="cst-label">Gmail API</div><div class="cst-val">$0</div><div class="cst-sub">Free with Google account</div></div>
+</div>
+
+<div class="label">Build Wave 1 now — click to generate each module</div>
+<div class="pills">
+  <div class="pill" onclick="sendPrompt('Start with Instagram — give me the complete step by step to get my Instagram Graph API access token for all 4 CREOVA accounts and build the instagram.py module for Akili')">1. Instagram setup + code ↗</div>
+  <div class="pill" onclick="sendPrompt('Give me the complete step by step to get Twitter/X API v2 keys and build the twitter.py module for Akili PULSE')">2. Twitter/X setup + code ↗</div>
+  <div class="pill" onclick="sendPrompt('Give me the complete step by step to get LinkedIn API OAuth and build the linkedin.py module for Akili PULSE')">3. LinkedIn setup + code ↗</div>
+  <div class="pill" onclick="sendPrompt('Give me the complete step by step to get Gmail API OAuth credentials and build the gmail.py module for Akili REACH')">4. Gmail setup + code ↗</div>
+  <div class="pill" onclick="sendPrompt('Give me the complete step by step to get a GitHub personal access token for creova-gif org and build the github_monitor.py module for Akili SHIELD')">5. GitHub setup + code ↗</div>
+</div>
+</div>
