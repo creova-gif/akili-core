@@ -306,5 +306,6 @@ def create_web_app() -> web.Application:
     app.router.add_get("/instagram/auth",             handle_instagram_auth)
     app.router.add_get("/instagram/callback",         handle_instagram_callback)
     app.router.add_post("/instagram/data-deletion",   handle_data_deletion)
+    app.router.add_get("/instagram/data-deletion",    handle_data_deletion)
     app.router.add_get("/instagram/deletion-status",  handle_deletion_status)
     return app
