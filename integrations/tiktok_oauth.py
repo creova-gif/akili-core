@@ -292,8 +292,11 @@ h1{{color:#fff;}} a{{color:#69b4ff;}} p{{color:#888;}}</style></head>
 
 def create_web_app() -> web.Application:
     from integrations.gmail_oauth import handle_gmail_auth, handle_gmail_callback
+    from dashboard import handle_dashboard, handle_api_status
     app = web.Application()
-    app.router.add_get("/",                handle_index)
+    app.router.add_get("/",                handle_dashboard)
+    app.router.add_get("/status",          handle_index)
+    app.router.add_get("/api/status",      handle_api_status)
     app.router.add_get("/tiktok/auth",     handle_auth)
     app.router.add_get("/tiktok/callback", handle_callback)
     app.router.add_get("/gmail/auth",      handle_gmail_auth)
