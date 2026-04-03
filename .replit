@@ -59,6 +59,8 @@ SNAPCHAT_CLIENT_SECRET = "***REMOVED***"
 SNAPCHAT_ACCESS_TOKEN = "***REMOVED***"
 TIKTOK_CLIENT_KEY = " ***REMOVED***"
 TIKTOK_CLIENT_SECRET = "***REMOVED***"
+personal_gmail_address = "ayoubjustin2@gmail.com"
+business_gmail_account = "creativeinnovationspace@gmail.com"
 
 [[ports]]
 localPort = 8080

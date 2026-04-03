@@ -284,13 +284,18 @@ h1{{color:#fff;}} a{{color:#69b4ff;}} p{{color:#888;}}</style></head>
 <p>Telegram bot active · 5 agents running</p>
 <br>
 <p><a href="/tiktok/auth">🎵 Authorize TikTok @creovamusic</a></p>
+  <p><a href="/gmail/auth?account=personal">📧 Authorize Gmail (personal)</a></p>
+  <p><a href="/gmail/auth?account=business">📧 Authorize Gmail (business)</a></p>
 </div></body></html>"""
     return web.Response(text=html, content_type="text/html")
 
 
 def create_web_app() -> web.Application:
+    from integrations.gmail_oauth import handle_gmail_auth, handle_gmail_callback
     app = web.Application()
     app.router.add_get("/",                handle_index)
     app.router.add_get("/tiktok/auth",     handle_auth)
     app.router.add_get("/tiktok/callback", handle_callback)
+    app.router.add_get("/gmail/auth",      handle_gmail_auth)
+    app.router.add_get("/gmail/callback",  handle_gmail_callback)
     return app
