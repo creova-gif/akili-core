@@ -26,12 +26,8 @@ GRAPH = "https://graph.facebook.com/v18.0"
 SCOPES = [
     "instagram_basic",
     "instagram_content_publish",
-    "instagram_manage_insights",
-    "instagram_manage_comments",
     "pages_show_list",
     "pages_read_engagement",
-    "pages_manage_posts",
-    "business_management",
     "public_profile",
 ]
 
