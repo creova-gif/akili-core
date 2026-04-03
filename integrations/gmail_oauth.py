@@ -81,37 +81,8 @@ async def handle_gmail_auth(request: web.Request) -> web.Response:
 
     log.info(f"[Gmail OAuth] Redirecting to Google auth — account: {account}")
 
-    html = f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>AKILI — Gmail Auth</title>
-<meta http-equiv="refresh" content="2;url={auth_url}">
-<style>
-  body {{ font-family: monospace; background: #0a0a0a; color: #e0e0e0;
-         display: flex; align-items: center; justify-content: center;
-         min-height: 100vh; margin: 0; }}
-  .box {{ background: #111; border: 1px solid #333; border-radius: 12px;
-          padding: 40px; max-width: 500px; text-align: center; }}
-  h1 {{ color: #fff; }} p {{ color: #aaa; }}
-  code {{ color: #69b4ff; font-size: 0.82rem; word-break: break-all; }}
-  .note {{ color: #555; font-size: 0.78rem; margin-top: 20px; }}
-</style>
-</head>
-<body>
-<div class="box">
-  <h1>📧 AKILI × Gmail</h1>
-  <p>Connecting <strong>{account}</strong> Gmail account...</p>
-  <p>Redirecting to Google in 2 seconds.</p>
-  <p>Log in with <strong>whichever Gmail you want to connect</strong>.<br>
-     Your Google Cloud account stays completely separate.</p>
-  <p class="note">Redirect URI: <code>{redirect_uri}</code></p>
-  <p style="margin-top:20px"><a href="{auth_url}" style="color:#69b4ff">
-     → Click here if not redirected automatically</a></p>
-</div>
-</body>
-</html>"""
-    return web.Response(text=html, content_type="text/html")
+    # Direct 302 redirect — opens Google login immediately in any real browser
+    raise web.HTTPFound(location=auth_url)
 
 
 async def handle_gmail_callback(request: web.Request) -> web.Response:
