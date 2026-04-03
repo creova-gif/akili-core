@@ -1,0 +1,360 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.ak{padding:1.5rem 0;font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem}
+.logo{font-size:11px;font-weight:500;letter-spacing:0.13em;color:var(--color-text-secondary);text-transform:uppercase}
+.sub{font-size:11px;color:var(--color-text-tertiary);margin-top:3px}
+.pulse{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)}
+.dot{width:7px;height:7px;border-radius:50%;background:#3B6D11;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.label{font-size:10px;font-weight:500;letter-spacing:0.1em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:10px}
+
+/* Orchestrator */
+.orch{border:0.5px solid var(--color-border-primary);border-radius:var(--border-radius-lg);background:var(--color-background-primary);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:16px}
+.orch-icon{width:44px;height:44px;border-radius:50%;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.orch-name{font-size:16px;font-weight:500;color:var(--color-text-primary)}
+.orch-role{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.orch-model{font-size:10px;padding:2px 8px;background:var(--color-background-secondary);border-radius:4px;color:var(--color-text-tertiary);margin-top:4px;display:inline-block}
+
+/* Connector line */
+.connector{width:0.5px;height:20px;background:var(--color-border-secondary);margin:0 auto;margin-bottom:1rem}
+
+/* Agent grid */
+.agents{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:1.75rem}
+.agent{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);background:var(--color-background-primary);overflow:hidden;cursor:pointer;transition:border-color 0.15s}
+.agent:hover{border-color:var(--color-border-secondary)}
+.agent.active{border-color:var(--color-border-primary)}
+.agent-head{padding:10px 10px 8px}
+.agent-tag{font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:6px}
+.a1{background:#FCEBEB;color:#A32D2D}
+.a2{background:#E1F5EE;color:#0F6E56}
+.a3{background:#E6F1FB;color:#185FA5}
+.a4{background:#FAEEDA;color:#854F0B}
+.a5{background:#EEEDFE;color:#534AB7}
+.agent-name{font-size:12px;font-weight:500;color:var(--color-text-primary);line-height:1.3}
+.agent-model{font-size:9px;color:var(--color-text-tertiary);margin-top:3px}
+.agent-body{padding:0 10px 10px;display:none;border-top:0.5px solid var(--color-border-tertiary)}
+.agent.active .agent-body{display:block}
+.resp-list{margin-top:8px;display:flex;flex-direction:column;gap:3px}
+.resp{font-size:10px;color:var(--color-text-secondary);padding:3px 5px;border-radius:3px;background:var(--color-background-secondary);line-height:1.4}
+.agent-btn{margin-top:8px;font-size:10px;padding:4px 8px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;color:var(--color-text-secondary);cursor:pointer;width:100%}
+.agent-btn:hover{color:var(--color-text-primary);background:var(--color-background-secondary)}
+
+/* Ventures */
+.ventures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:1.75rem}
+.vent{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:0.75rem}
+.vent-name{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.vent-handles{display:flex;flex-direction:column;gap:2px}
+.handle{font-size:10px;color:var(--color-text-secondary)}
+
+/* Platforms */
+.platform-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:1.75rem}
+.pf{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px;text-align:center}
+.pf-name{font-size:10px;font-weight:500;color:var(--color-text-primary)}
+.pf-type{font-size:9px;color:var(--color-text-tertiary);margin-top:1px}
+
+/* Cost */
+.cost{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:1.75rem}
+.ci{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:0.75rem}
+.ci-label{font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px}
+.ci-val{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.ci-sub{font-size:9px;color:var(--color-text-secondary);margin-top:1px}
+
+/* Pills */
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:11px;padding:4px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:20px;cursor:pointer;color:var(--color-text-secondary)}
+.pill:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
+
+/* Phase timeline */
+.timeline{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:1.75rem}
+.tl{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:0.875rem;background:var(--color-background-primary)}
+.tl-week{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px}
+.tl-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px}
+.tl-items{display:flex;flex-direction:column;gap:3px}
+.tl-item{font-size:10px;color:var(--color-text-secondary)}
+</style>
+
+<div class="ak">
+<div class="topbar">
+  <div>
+    <div class="logo">Akili AI · Autonomous Agent System</div>
+    <div class="sub">5 specialized agents · all ventures · 24/7 operation</div>
+  </div>
+  <div class="pulse"><div class="dot"></div>Designed for Justin Mafie</div>
+</div>
+
+<!-- Orchestrator -->
+<div class="label">Orchestrator</div>
+<div class="orch">
+  <div class="orch-icon">A</div>
+  <div>
+    <div class="orch-name">Akili — Master Orchestrator</div>
+    <div class="orch-role">Coordinates all 5 agents · receives commands via Telegram only · routes tasks · consolidates nightly · never executes directly</div>
+    <div class="orch-model">Claude Opus 4 · highest reasoning · Telegram = only command channel</div>
+  </div>
+</div>
+<div class="connector"></div>
+
+<!-- 5 Agents -->
+<div class="label">5 specialized sub-agents · click to expand</div>
+<div class="agents">
+
+  <div class="agent" id="a1" onclick="toggleAgent('a1')">
+    <div class="agent-head">
+      <div class="agent-tag a1">Agent 1</div>
+      <div class="agent-name">Guardian</div>
+      <div class="agent-model">Claude Sonnet · security focus</div>
+    </div>
+    <div class="agent-body">
+      <div class="resp-list">
+        <div class="resp">Monitors all GitHub repos (creova-gif org · 14 repos)</div>
+        <div class="resp">Protects all account credentials · API keys · tokens</div>
+        <div class="resp">Monitors websites: creova.one + all product domains</div>
+        <div class="resp">Detects unauthorized access attempts</div>
+        <div class="resp">Reviews Vercel/Supabase deploy health</div>
+        <div class="resp">Alerts Justin immediately via Telegram on threats</div>
+        <div class="resp">Nightly security audit of all systems</div>
+        <div class="resp">Manages permissions for all other agents</div>
+      </div>
+      <button class="agent-btn" onclick="sendPrompt('Write the full system prompt and security ruleset for Guardian, Akili\\'s security agent responsible for protecting all CREOVA GitHub repos, websites, accounts, and credentials');event.stopPropagation()">Build Guardian prompt ↗</button>
+    </div>
+  </div>
+
+  <div class="agent" id="a2" onclick="toggleAgent('a2')">
+    <div class="agent-head">
+      <div class="agent-tag a2">Agent 2</div>
+      <div class="agent-name">Prism</div>
+      <div class="agent-model">Claude Sonnet · social focus</div>
+    </div>
+    <div class="agent-body">
+      <div class="resp-list">
+        <div class="resp">@jj_mafie Instagram · all personal posts</div>
+        <div class="resp">@creativeinnovation__ · CREOVA Music</div>
+        <div class="resp">@sankofastudio__ · Sankofa Studios</div>
+        <div class="resp">@creovasolutions · CREOVA Solutions</div>
+        <div class="resp">Justin Mafie · LinkedIn + Twitter/X</div>
+        <div class="resp">TikTok · Snapchat Creator · YouTube</div>
+        <div class="resp">Schedules by data · A/B tests post times</div>
+        <div class="resp">Cross-posts and adapts content per platform</div>
+        <div class="resp">Reposts, stories, reels, threads</div>
+      </div>
+      <button class="agent-btn" onclick="sendPrompt('Write the full system prompt for Prism, Akili\\'s social media agent managing all Justin Mafie and CREOVA social accounts across Instagram, TikTok, LinkedIn, Twitter, Snapchat, YouTube');event.stopPropagation()">Build Prism prompt ↗</button>
+    </div>
+  </div>
+
+  <div class="agent" id="a3" onclick="toggleAgent('a3')">
+    <div class="agent-head">
+      <div class="agent-tag a3">Agent 3</div>
+      <div class="agent-name">Relay</div>
+      <div class="agent-model">Claude Sonnet · comms focus</div>
+    </div>
+    <div class="agent-body">
+      <div class="resp-list">
+        <div class="resp">Monitors + replies to all inbound emails</div>
+        <div class="resp">WhatsApp Business replies (all ventures)</div>
+        <div class="resp">SMS and text message management</div>
+        <div class="resp">DMs across all social accounts</div>
+        <div class="resp">Replies when Justin is offline · flags urgent</div>
+        <div class="resp">Email marketing campaigns + sequences</div>
+        <div class="resp">Reposts + engagement even while you sleep</div>
+        <div class="resp">Sends Telegram summary of all comms daily</div>
+      </div>
+      <button class="agent-btn" onclick="sendPrompt('Write the full system prompt for Relay, Akili\\'s communications agent handling emails, WhatsApp, SMS, DMs across all CREOVA ventures with rules for what to reply vs escalate to Justin');event.stopPropagation()">Build Relay prompt ↗</button>
+    </div>
+  </div>
+
+  <div class="agent" id="a4" onclick="toggleAgent('a4')">
+    <div class="agent-head">
+      <div class="agent-tag a4">Agent 4</div>
+      <div class="agent-name">Scout</div>
+      <div class="agent-model">Claude Opus · research focus</div>
+    </div>
+    <div class="agent-body">
+      <div class="resp-list">
+        <div class="resp">Deep research on competitors per product</div>
+        <div class="resp">Lead generation for all CREOVA ventures</div>
+        <div class="resp">Market intelligence: Africa + Canada tech</div>
+        <div class="resp">Investor research for GoPay, Kaya, MentalPath</div>
+        <div class="resp">Trend monitoring: FinTech, HealthTech, AgriTech</div>
+        <div class="resp">Music industry data: streams, playlists, promo ops</div>
+        <div class="resp">Partnership + collab opportunities</div>
+        <div class="resp">Weekly research briefing → Telegram</div>
+      </div>
+      <button class="agent-btn" onclick="sendPrompt('Write the full system prompt for Scout, Akili\\'s research agent responsible for deep research, lead generation, market intelligence, and investor research across all CREOVA products and Justin\\'s music');event.stopPropagation()">Build Scout prompt ↗</button>
+    </div>
+  </div>
+
+  <div class="agent" id="a5" onclick="toggleAgent('a5')">
+    <div class="agent-head">
+      <div class="agent-tag a5">Agent 5</div>
+      <div class="agent-name">Amplify</div>
+      <div class="agent-model">Claude Sonnet · growth focus</div>
+    </div>
+    <div class="agent-body">
+      <div class="resp-list">
+        <div class="resp">Music streams: Spotify, Apple Music, DistroKid</div>
+        <div class="resp">Playlist pitching + curator outreach</div>
+        <div class="resp">Paid ad strategy: Meta, TikTok, Spotify ads</div>
+        <div class="resp">Press releases + media outreach</div>
+        <div class="resp">Snapchat Creator program growth</div>
+        <div class="resp">CREOVA brand campaigns across all ventures</div>
+        <div class="resp">Cross-pollination: music fans → tech audience</div>
+        <div class="resp">Runs promotional experiments · reports results</div>
+        <div class="resp">Coordinates with Prism for campaign execution</div>
+      </div>
+      <button class="agent-btn" onclick="sendPrompt('Write the full system prompt for Amplify, Akili\\'s promotion agent driving music streams, follower growth, brand campaigns, and cross-pollination across all Justin Mafie and CREOVA platforms');event.stopPropagation()">Build Amplify prompt ↗</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Ventures -->
+<div class="label">All ventures Akili manages</div>
+<div class="ventures">
+  <div class="vent">
+    <div class="vent-name">Justin Mafie (Personal)</div>
+    <div class="vent-handles">
+      <div class="handle">Instagram: @jj_mafie</div>
+      <div class="handle">LinkedIn: Justin Mafie</div>
+      <div class="handle">Twitter: Justin Mafie</div>
+      <div class="handle">Snapchat: jj_mafie</div>
+      <div class="handle">TikTok: @jj_mafie</div>
+    </div>
+  </div>
+  <div class="vent">
+    <div class="vent-name">CREOVA Music</div>
+    <div class="vent-handles">
+      <div class="handle">Instagram: @creativeinnovation__</div>
+      <div class="handle">Distributed via DistroKid</div>
+      <div class="handle">Spotify · Apple Music · all DSPs</div>
+      <div class="handle">TikTok music promo</div>
+    </div>
+  </div>
+  <div class="vent">
+    <div class="vent-name">Sankofa Studios</div>
+    <div class="vent-handles">
+      <div class="handle">Instagram: @sankofastudio__</div>
+      <div class="handle">Studio bookings + music production</div>
+      <div class="handle">Creator content</div>
+    </div>
+  </div>
+  <div class="vent">
+    <div class="vent-name">CREOVA Solutions</div>
+    <div class="vent-handles">
+      <div class="handle">Instagram: @creovasolutions</div>
+      <div class="handle">LinkedIn company page</div>
+      <div class="handle">14 tech products (Africa + Canada)</div>
+      <div class="handle">creova.one</div>
+    </div>
+  </div>
+  <div class="vent">
+    <div class="vent-name">CREOVA Media</div>
+    <div class="vent-handles">
+      <div class="handle">www.creova.one</div>
+      <div class="handle">Branding + media agency</div>
+      <div class="handle">Content production</div>
+    </div>
+  </div>
+  <div class="vent">
+    <div class="vent-name">Tech Products</div>
+    <div class="vent-handles">
+      <div class="handle">GoPay · MentalPath · Kaya</div>
+      <div class="handle">WazaWealth · KilimoAI · GridOS</div>
+      <div class="handle">BudgetEase · SEEN · +6 more</div>
+    </div>
+  </div>
+</div>
+
+<!-- Platform coverage -->
+<div class="label">Platform coverage</div>
+<div class="platform-grid">
+  <div class="pf"><div class="pf-name">Instagram</div><div class="pf-type">3 accounts</div></div>
+  <div class="pf"><div class="pf-name">TikTok</div><div class="pf-type">Music + personal</div></div>
+  <div class="pf"><div class="pf-name">LinkedIn</div><div class="pf-type">Personal + company</div></div>
+  <div class="pf"><div class="pf-name">Twitter/X</div><div class="pf-type">Personal brand</div></div>
+  <div class="pf"><div class="pf-name">Snapchat</div><div class="pf-type">Creator program</div></div>
+  <div class="pf"><div class="pf-name">YouTube</div><div class="pf-type">Long-form content</div></div>
+  <div class="pf"><div class="pf-name">Spotify</div><div class="pf-type">Streams + artist</div></div>
+  <div class="pf"><div class="pf-name">Apple Music</div><div class="pf-type">DSP streams</div></div>
+  <div class="pf"><div class="pf-name">WhatsApp</div><div class="pf-type">Business comms</div></div>
+  <div class="pf"><div class="pf-name">Email</div><div class="pf-type">Marketing + reply</div></div>
+  <div class="pf"><div class="pf-name">SMS</div><div class="pf-type">Texts + alerts</div></div>
+  <div class="pf"><div class="pf-name">Telegram</div><div class="pf-type">Justin only · control</div></div>
+</div>
+
+<!-- Build timeline -->
+<div class="label">Build sequence</div>
+<div class="timeline">
+  <div class="tl">
+    <div class="tl-week">Week 1</div>
+    <div class="tl-title">Core + Guardian</div>
+    <div class="tl-items">
+      <div class="tl-item">Install OpenClaw + Telegram</div>
+      <div class="tl-item">Build ~/creova-life/ memory</div>
+      <div class="tl-item">Deploy Guardian agent</div>
+      <div class="tl-item">Connect all account credentials securely</div>
+    </div>
+  </div>
+  <div class="tl">
+    <div class="tl-week">Week 2</div>
+    <div class="tl-title">Prism + Relay</div>
+    <div class="tl-items">
+      <div class="tl-item">Connect all social APIs</div>
+      <div class="tl-item">Deploy Prism for social posting</div>
+      <div class="tl-item">Deploy Relay for comms + DMs</div>
+      <div class="tl-item">Test auto-replies on all channels</div>
+    </div>
+  </div>
+  <div class="tl">
+    <div class="tl-week">Week 3</div>
+    <div class="tl-title">Scout + Amplify</div>
+    <div class="tl-items">
+      <div class="tl-item">Deploy Scout research loops</div>
+      <div class="tl-item">Deploy Amplify promotions</div>
+      <div class="tl-item">First music promo campaign</div>
+      <div class="tl-item">First lead gen run for GoPay</div>
+    </div>
+  </div>
+  <div class="tl">
+    <div class="tl-week">Week 4+</div>
+    <div class="tl-title">Full autonomy</div>
+    <div class="tl-items">
+      <div class="tl-item">All 5 agents running 24/7</div>
+      <div class="tl-item">Nightly consolidation active</div>
+      <div class="tl-item">Heartbeat every 30 min</div>
+      <div class="tl-item">Daily Telegram briefing to Justin</div>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly cost -->
+<div class="label">Monthly cost</div>
+<div class="cost">
+  <div class="ci"><div class="ci-label">Claude Max (Akili)</div><div class="ci-val">$200</div><div class="ci-sub">Orchestration + memory</div></div>
+  <div class="ci"><div class="ci-label">Codex</div><div class="ci-val">$200</div><div class="ci-sub">Overnight builds</div></div>
+  <div class="ci"><div class="ci-label">Composio</div><div class="ci-val">~$0</div><div class="ci-sub">Free tier to start</div></div>
+  <div class="ci"><div class="ci-label">Cloud server</div><div class="ci-val">~$10</div><div class="ci-sub">Always-on 24/7</div></div>
+  <div class="ci"><div class="ci-label">Total</div><div class="ci-val">~$410</div><div class="ci-sub">5 agents · all ventures</div></div>
+</div>
+
+<div class="label">Build each agent now</div>
+<div class="pills">
+  <div class="pill" onclick="sendPrompt('Write the complete Akili master orchestrator system prompt: identity, mission, all 5 agent names and roles, CREOVA ventures, command rules, Telegram-only control, nightly consolidation')">Write Akili master prompt ↗</div>
+  <div class="pill" onclick="sendPrompt('Write Guardian full system prompt and security ruleset')">Build Guardian ↗</div>
+  <div class="pill" onclick="sendPrompt('Write Prism full system prompt for all social accounts: @jj_mafie, @creativeinnovation__, @sankofastudio__, @creovasolutions, LinkedIn, Twitter, TikTok, Snapchat Creator, YouTube')">Build Prism ↗</div>
+  <div class="pill" onclick="sendPrompt('Write Relay full system prompt for email, WhatsApp, SMS, DMs — what to auto-reply vs escalate to Justin, and how to handle each venture separately')">Build Relay ↗</div>
+  <div class="pill" onclick="sendPrompt('Write Scout full system prompt for deep research, lead generation, market intelligence for all CREOVA products and Justin music')">Build Scout ↗</div>
+  <div class="pill" onclick="sendPrompt('Write Amplify full system prompt for music promotion, streams, Snapchat Creator growth, CREOVA brand campaigns')">Build Amplify ↗</div>
+  <div class="pill" onclick="sendPrompt('Write the ~/creova-life/ PARA memory structure for Akili covering all 5 ventures, 14 repos, all social handles, and key contacts')">Generate memory structure ↗</div>
+</div>
+</div>
+
+<script>
+function toggleAgent(id){
+  const el=document.getElementById(id);
+  const wasActive=el.classList.contains('active');
+  document.querySelectorAll('.agent').forEach(a=>a.classList.remove('active'));
+  if(!wasActive)el.classList.add('active');
+}
+</script>
