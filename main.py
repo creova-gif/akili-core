@@ -35,17 +35,22 @@ log = logging.getLogger("AKILI-CORE")
 
 class _ConflictFilter(logging.Filter):
     """Suppress noisy 409 Conflict errors from simultaneous dev+prod polling.
-    The bot still works — the conflict is expected when both environments run."""
+    The conflict message lives in exc_info, not the log message itself."""
     def filter(self, record):
+        if record.exc_info and record.exc_info[1]:
+            exc_str = str(record.exc_info[1])
+            if "terminated by other getUpdates" in exc_str:
+                return False
         msg = record.getMessage()
-        return (
-            "Conflict: terminated by other getUpdates" not in msg
-            and "terminated by other getUpdates" not in msg
-        )
+        return "terminated by other getUpdates" not in msg
 
 
-logging.getLogger("telegram.ext.Updater").addFilter(_ConflictFilter())
-logging.getLogger("telegram.ext.Application").addFilter(_ConflictFilter())
+_conflict_filter = _ConflictFilter()
+logging.getLogger("telegram.ext.Updater").addFilter(_conflict_filter)
+logging.getLogger("telegram.ext.Application").addFilter(_conflict_filter)
+# Also filter at root handler level so it never reaches any output
+for _h in logging.root.handlers:
+    _h.addFilter(_conflict_filter)
 
 # ── Config ────────────────────────────────────────────────────
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
