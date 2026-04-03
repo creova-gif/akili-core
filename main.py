@@ -18,6 +18,7 @@ from agents.intel import IntelAgent
 from agents.amplify import AmplifyAgent
 from memory.manager import MemoryManager
 from integrations import IntegrationHub
+from integrations.tiktok_oauth import create_web_app
 
 # ── Logging ──────────────────────────────────────────────────
 os.makedirs("logs", exist_ok=True)
@@ -322,6 +323,19 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 # ── Entry Point ───────────────────────────────────────────────
+async def _run_web_server():
+    """Runs the aiohttp web server (OAuth + status page) on port 8080."""
+    from aiohttp import web as aio_web
+    web_app = create_web_app()
+    runner = aio_web.AppRunner(web_app)
+    await runner.setup()
+    site = aio_web.TCPSite(runner, "0.0.0.0", 8080)
+    await site.start()
+    log.info("Web server running on port 8080 — /tiktok/auth ready")
+    while True:
+        await asyncio.sleep(3600)
+
+
 async def main():
     global akili
 
@@ -349,6 +363,7 @@ async def main():
         asyncio.create_task(akili.heartbeat(app))
         asyncio.create_task(akili.morning_brief(app))
         asyncio.create_task(akili.snapchat_daily_push(app))
+        asyncio.create_task(_run_web_server())
 
         # Keep running until interrupted
         stop = asyncio.Event()
