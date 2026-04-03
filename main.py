@@ -148,12 +148,30 @@ class AkiliCore:
         elif any(w in text_lower for w in ["github scan", "repo scan", "github status"]):
             return await self.hub.github.format_status_report()
 
-        elif "snapchat" in text_lower and any(w in text_lower for w in ["plan", "content", "today", "post"]):
-            plan = await self.hub.snapchat.generate_daily_content()
-            return self.hub.snapchat.format_telegram_reminder(plan)
+        elif "snapchat" in text_lower and any(w in text_lower for w in ["streak", "progress", "days"]):
+            return self.hub.snapchat.get_streak_status()
 
-        elif "snapchat" in text_lower and "checklist" in text_lower:
-            return self.hub.snapchat.creator_program_checklist()
+        elif "snapchat" in text_lower and "posted" in text_lower and "spotlight" in text_lower:
+            return self.hub.snapchat.mark_posted(include_spotlight=True)
+
+        elif "snapchat" in text_lower and "posted" in text_lower:
+            return self.hub.snapchat.mark_posted()
+
+        elif "snapchat" in text_lower and any(w in text_lower for w in ["week", "queue", "7 days", "weekly"]):
+            return await self.hub.snapchat.generate_weekly_queue()
+
+        elif "snapchat" in text_lower and any(day in text_lower for day in ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]):
+            days = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
+            day = next((d for d in days if d in text_lower), None)
+            plan = await self.hub.snapchat.generate_rich_daily_content(day_override=day)
+            return self.hub.snapchat.format_rich_brief(plan)
+
+        elif "snapchat" in text_lower and any(w in text_lower for w in ["checklist", "creator", "targets"]):
+            return self.hub.snapchat.get_streak_status()
+
+        elif "snapchat" in text_lower:
+            plan = await self.hub.snapchat.generate_rich_daily_content()
+            return self.hub.snapchat.format_rich_brief(plan)
 
         # ── Phase 1: Agent routing ─────────────────────────────
         elif any(w in text_lower for w in ["security", "github", "repo", "uptime", "breach", "key", "protect", "shield"]):
@@ -236,6 +254,23 @@ class AkiliCore:
                     log.error(f"[BRIEF ERROR] {e}")
             await asyncio.sleep(60)
 
+    async def snapchat_daily_push(self, app):
+        """Automatically sends Snapchat content brief to Justin every day at 9AM."""
+        while True:
+            now = datetime.now()
+            if now.hour == 9 and now.minute == 0:
+                try:
+                    plan = await self.hub.snapchat.generate_rich_daily_content()
+                    brief = self.hub.snapchat.format_rich_brief(plan)
+                    await app.bot.send_message(
+                        chat_id=JUSTIN_CHAT_ID,
+                        text=brief
+                    )
+                    log.info("[SNAP] Daily Snapchat brief sent to Justin")
+                except Exception as e:
+                    log.error(f"[SNAP BRIEF ERROR] {e}")
+            await asyncio.sleep(60)
+
 
 # ── Telegram Handlers ─────────────────────────────────────────
 akili = None
@@ -313,6 +348,7 @@ async def main():
 
         asyncio.create_task(akili.heartbeat(app))
         asyncio.create_task(akili.morning_brief(app))
+        asyncio.create_task(akili.snapchat_daily_push(app))
 
         # Keep running until interrupted
         stop = asyncio.Event()
