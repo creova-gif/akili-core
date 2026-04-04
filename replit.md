@@ -80,7 +80,7 @@ The workflow `Start application` runs `python main.py`.
 6. CREOVA Tech (14 GitHub repos at github.com/creova-gif)
 
 ## Markets
-Tanzania, Kenya, Canada (Halton Hills, Ontario)
+Tanzania, Kenya, Canada (St. Catharines, Ontario)
 
 ## Content Rules
 - 30% Music / 30% Tech / 20% Personal / 20% Education

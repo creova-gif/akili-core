@@ -140,50 +140,93 @@ class GitHubMonitor:
             )
         scan = await self.full_org_scan()
         lines = [
-            f"🐙 GITHUB STATUS — {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-            f"Org: {GITHUB_ORG} | {len(ALL_REPOS)} repos monitored",
-            f"Active (24h): {scan['active_repos']} repos",
-            f"Open issues total: {scan['total_open_issues']}",
+            f"🐙 <b>GITHUB — creova-gif</b>",
+            f"━━━━━━━━━━━━━━━━━━━━",
+            f"<b>{len(ALL_REPOS)} repos</b> · {scan['active_repos']} active (24h) · {scan['total_open_issues']} open issues",
             "",
         ]
 
         if scan["alerts"]:
-            lines.append("🚨 ALERTS:")
+            lines.append("🚨 <b>ALERTS:</b>")
             lines.extend(scan["alerts"])
             lines.append("")
 
-        lines.append("📊 REPO ACTIVITY:")
+        lines.append("📊 <b>REPOS:</b>")
         for repo in scan["repos"]:
             if "error" in repo:
-                lines.append(f"  ❌ {repo['name']}: {repo['error']}")
+                lines.append(f"  ❌ <b>{repo['name']}</b>: {repo['error']}")
             else:
-                commits = repo.get("recent_commits", 0)
-                issues = repo.get("open_issues", 0)
+                commits  = repo.get("recent_commits", 0)
+                issues   = repo.get("open_issues", 0)
+                lang     = repo.get("language") or "—"
+                desc     = repo.get("description") or ""
+                updated  = repo.get("updated", "")
+                # Format last-updated date (YYYY-MM-DDTHH:MM:SSZ → MM-DD)
+                try:
+                    d = datetime.strptime(updated[:10], "%Y-%m-%d")
+                    last = d.strftime("%b %d")
+                except Exception:
+                    last = "—"
                 activity = "🟢" if commits > 0 else "⚪"
-                lines.append(f"  {activity} {repo['name']} — {commits} commits/24h · {issues} issues")
+                detail   = f"{lang} · last push {last}"
+                if desc:
+                    detail += f" · {desc[:40]}"
+                commit_txt = f"{commits} commit{'s' if commits != 1 else ''}/24h" if commits else "no recent commits"
+                issue_txt  = f"{issues} issue{'s' if issues != 1 else ''}" if issues else "no issues"
+                lines.append(f"  {activity} <b>{repo['name']}</b> — {commit_txt} · {issue_txt}")
+                lines.append(f"       <i>{detail}</i>")
 
+        lines.append("")
+        lines.append("⚡ Say <code>kaya repo</code> / <code>gridos repo</code> etc. for a deep dive on any one.")
         return "\n".join(lines)
 
     async def watch_repo(self, repo_name: str) -> str:
-        """Deep dive on a single repo."""
+        """Deep dive on a single repo — rich formatted Telegram output."""
         summary = await self.get_repo_summary(repo_name)
+        if "error" in summary:
+            return f"🐙 <b>{repo_name}</b>\n❌ {summary['error']}"
+
         commits = await self.get_recent_commits(repo_name, since_hours=72)
-        issues = await self.get_open_issues(repo_name)
+        issues  = await self.get_open_issues(repo_name)
+
+        lang    = summary.get("language") or "—"
+        desc    = summary.get("description") or "No description"
+        stars   = summary.get("stars", 0)
+        n_iss   = summary.get("open_issues", 0)
+        updated = summary.get("updated", "")
+        branch  = summary.get("default_branch", "main")
+        private = "🔒 Private" if summary.get("private") else "🌐 Public"
+
+        try:
+            d    = datetime.strptime(updated[:10], "%Y-%m-%d")
+            last = d.strftime("%B %d, %Y")
+        except Exception:
+            last = updated[:10] if updated else "—"
 
         lines = [
-            f"🔍 {repo_name} — Deep Scan",
-            f"Language: {summary.get('language', 'N/A')}",
-            f"Open issues: {summary.get('open_issues', 0)}",
-            f"Last updated: {summary.get('updated', 'N/A')[:10]}",
+            f"🔍 <b>{repo_name}</b> — Deep Scan",
+            f"━━━━━━━━━━━━━━━━━━━━",
+            f"▸ <i>{desc}</i>",
+            f"▸ Language: <b>{lang}</b> · {private}",
+            f"▸ Branch: <code>{branch}</code> · ⭐ {stars} · 🐛 {n_iss} open issues",
+            f"▸ Last push: {last}",
+            f"▸ GitHub: <code>github.com/{GITHUB_ORG}/{repo_name}</code>",
             "",
-            f"Recent commits (72h): {len(commits)}",
         ]
-        for c in commits[:3]:
-            lines.append(f"  • [{c['sha']}] {c['message']}")
+
+        lines.append(f"📝 <b>Recent commits (72h): {len(commits)}</b>")
+        if commits:
+            for c in commits[:5]:
+                msg = c["message"].split("\n")[0][:70]
+                lines.append(f"  ▸ <code>[{c['sha']}]</code> {msg}")
+        else:
+            lines.append("  ⚪ No commits in the last 72 hours")
 
         if issues:
-            lines.append(f"\nOpen issues ({len(issues)}):")
-            for i in issues[:3]:
-                lines.append(f"  #{i['number']}: {i['title']}")
+            lines.append(f"\n🐛 <b>Open issues ({len(issues)}):</b>")
+            for i in issues[:5]:
+                labels = f" [{', '.join(i['labels'])}]" if i["labels"] else ""
+                lines.append(f"  ▸ #{i['number']}: {i['title']}{labels}")
 
+        lines.append(f"\n⚡ <code>github scan</code> to see all 8 repos at once.")
         return "\n".join(lines)

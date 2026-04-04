@@ -104,7 +104,7 @@ VENTURES YOU MANAGE:
      GridOS, Darsme, AIHealthSupport, BudgetEaseApp,
      HealthFitness, Elimu, Mskniagara, SEEN, WazaWealth
 
-MARKETS: Tanzania, Kenya, Canada (Halton Hills, Ontario)
+MARKETS: Tanzania, Kenya, Canada (St. Catharines, Ontario)
 
 YOUR 5 AGENTS:
 - SHIELD: security, GitHub, products, accounts, uptime
@@ -230,8 +230,46 @@ class AkiliCore:
         elif any(w in text_lower for w in ["follower count", "follower snapshot", "follower numbers"]):
             return await self.hub.get_all_follower_counts()
 
-        elif any(w in text_lower for w in ["github scan", "repo scan", "github status"]):
+        elif any(w in text_lower for w in [
+            "github scan", "repo scan", "github status", "my repos",
+            "all repos", "show repos", "repo list", "check repos",
+            "list repos", "all my repos", "creova repos", "repositories"
+        ]):
+            # Specific repo named? → deep dive; else full org scan
+            _known = {
+                "gopay": "Gopay", "kaya": "KayaYourpropertyai",
+                "kayayourpropertyai": "KayaYourpropertyai",
+                "darsme": "Darsme", "mentalpath": "Mentalpath",
+                "mental path": "Mentalpath", "aihealthsupport": "Aihealthsupport",
+                "ai health": "Aihealthsupport", "gridos": "GridOs",
+                "grid os": "GridOs", "kilimoai": "Kilimoai",
+                "kilimo": "Kilimoai", "budgeteaseapp": "Budgeteaseapp",
+                "budgetease": "Budgeteaseapp",
+            }
+            match = next((v for k, v in _known.items() if k in text_lower), None)
+            if match:
+                return await self.hub.github.watch_repo(match)
             return await self.hub.github.format_status_report()
+
+        # Specific repo mentioned by name → deep dive
+        elif any(k in text_lower for k in [
+            "gopay", "kayayour", "kaya your", "darsme", "mentalpath",
+            "mental path", "aihealthsupport", "gridos", "grid os",
+            "kilimoai", "kilimo ai", "budgeteaseapp", "budgetease"
+        ]):
+            _known = {
+                "gopay": "Gopay", "kayayour": "KayaYourpropertyai",
+                "kaya your": "KayaYourpropertyai", "darsme": "Darsme",
+                "mentalpath": "Mentalpath", "mental path": "Mentalpath",
+                "aihealthsupport": "Aihealthsupport", "gridos": "GridOs",
+                "grid os": "GridOs", "kilimoai": "Kilimoai",
+                "kilimo ai": "Kilimoai", "budgeteaseapp": "Budgeteaseapp",
+                "budgetease": "Budgeteaseapp",
+            }
+            match = next((v for k, v in _known.items() if k in text_lower), None)
+            if match:
+                return await self.hub.github.watch_repo(match)
+            return await self.shield.handle(text)
 
         elif "snapchat" in text_lower and any(w in text_lower for w in ["streak", "progress", "days"]):
             return self.hub.snapchat.get_streak_status()

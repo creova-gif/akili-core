@@ -97,7 +97,7 @@ Both → Personal brand:
 CONTENT HOOKS THAT ALWAYS WORK:
 - "Building [X] from [Y] — here's what I learned"
 - "African founder. Music producer. Tech builder. This is CREOVA."
-- "From Halton Hills to Dar es Salaam — we're global"
+- "From St. Catharines to Dar es Salaam — we're global"
 - "Nobody talks about [insight] in African tech. Let's fix that."
 
 FUNNEL RULE: All roads lead to creova.one
