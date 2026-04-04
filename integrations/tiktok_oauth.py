@@ -112,10 +112,26 @@ async def handle_callback(request: web.Request) -> web.Response:
     cfg = _get_config()
     params = request.rel_url.query
 
+    # Log ALL params for debugging
+    log.info(f"[TikTok OAuth] Callback hit — params: {dict(params)}")
+
     error = params.get("error")
     if error:
         desc = params.get("error_description", "Unknown error")
         log.error(f"[TikTok OAuth] Auth error: {error} — {desc}")
+        # Notify Justin via Telegram
+        tg_token = os.environ.get("TELEGRAM_TOKEN", "")
+        chat_id  = os.environ.get("JUSTIN_CHAT_ID", "")
+        if tg_token and chat_id:
+            import asyncio
+            async def _notify():
+                async with aiohttp.ClientSession() as s:
+                    await s.post(
+                        f"https://api.telegram.org/bot{tg_token}/sendMessage",
+                        json={"chat_id": chat_id,
+                              "text": f"❌ TikTok OAuth error:\n{error}\n{desc}"},
+                    )
+            asyncio.create_task(_notify())
         return web.Response(
             text=f"❌ TikTok authorization failed: {error}\n{desc}",
             status=400,
@@ -125,6 +141,7 @@ async def handle_callback(request: web.Request) -> web.Response:
     state = params.get("state")
 
     if not code:
+        log.error(f"[TikTok OAuth] No code in callback — full params: {dict(params)}")
         return web.Response(text="❌ No code returned by TikTok.", status=400)
 
     code_verifier = _state_store.pop(state, None)
