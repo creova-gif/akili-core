@@ -293,7 +293,7 @@ h1{{color:#fff;}} a{{color:#69b4ff;}} p{{color:#888;}}</style></head>
 async def handle_tiktok_verification(request: web.Request) -> web.Response:
     """TikTok domain verification file."""
     return web.Response(
-        text="tiktok-developers-site-verification=636MMrWWq1k8D0aSK76VjqjPJsPGQO1V",
+        text="tiktok-developers-site-verification=ZOEgJ9JW9DI1DsSJngcQTHQLHJcMe7Ob",
         content_type="text/plain",
     )
 

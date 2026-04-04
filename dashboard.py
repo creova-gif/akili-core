@@ -116,7 +116,7 @@ async def handle_dashboard(request: web.Request) -> web.Response:
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="tiktok-developers-site-verification" content="636MMrWWq1k8D0aSK76VjqjPJsPGQO1V"/>
+<meta name="tiktok-developers-site-verification" content="ZOEgJ9JW9DI1DsSJngcQTHQLHJcMe7Ob"/>
 <title>AKILI — Command Center</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
