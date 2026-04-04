@@ -9,7 +9,15 @@ import json
 import logging
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from anthropic import Anthropic
+
+ET = ZoneInfo("America/Toronto")   # EDT in summer, EST in winter — auto-adjusts
+
+
+def _et_now() -> datetime:
+    """Current time in Eastern Time (handles DST automatically)."""
+    return datetime.now(ET)
 
 log = logging.getLogger("PULSE.Scheduler")
 
@@ -26,12 +34,15 @@ WEEKLY_THEMES = {
     "Sunday":    {"theme": "Founder Sunday",    "focus": "Justin Mafie vision, CREOVA roadmap, reflection"},
 }
 
+# All hours are EASTERN TIME (America/Toronto)
+# EDT in summer (UTC-4) · EST in winter (UTC-5) — auto-adjusted via zoneinfo
+# Best times for Canada + East Africa audiences
 POST_SCHEDULE = {
-    "instagram": [9, 12, 18, 21],
-    "twitter":   [8, 12, 17, 21],
-    "linkedin":  [8, 12, 17],
-    "tiktok":    [9, 14, 20],
-    "facebook":  [9, 18],
+    "instagram": [9, 12, 18, 21],   # 9am, noon, 6pm, 9pm ET
+    "twitter":   [8, 11, 17, 21],   # 8am, 11am, 5pm, 9pm ET
+    "linkedin":  [8, 12, 17],       # 8am, noon, 5pm ET
+    "tiktok":    [9, 14, 20],       # 9am, 2pm, 8pm ET
+    "facebook":  [9, 18],           # 9am, 6pm ET
 }
 
 PLATFORM_ACCOUNTS = {
@@ -69,7 +80,7 @@ class PulseScheduler:
 
     async def run(self):
         while True:
-            now    = datetime.now()
+            now    = _et_now()          # Eastern Time — auto EDT/EST
             hour   = now.hour
             minute = now.minute
             day    = now.strftime("%A")

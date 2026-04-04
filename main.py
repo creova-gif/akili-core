@@ -8,8 +8,11 @@ import os
 import asyncio
 import logging
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+ET = ZoneInfo("America/Toronto")   # EDT in summer, EST in winter — auto-adjusts
 
 from agents.shield import ShieldAgent
 from agents.pulse import PulseAgent
@@ -328,9 +331,9 @@ class AkiliCore:
             await asyncio.sleep(1800)
 
     async def morning_brief(self, app):
-        """Sends Justin a daily brief every morning at 8AM."""
+        """Sends Justin a daily brief every morning at 8AM Eastern Time."""
         while True:
-            now = datetime.now()
+            now = datetime.now(ET)
             if now.hour == 8 and now.minute == 0:
                 try:
                     brief = await self.intel.daily_brief()
@@ -344,9 +347,9 @@ class AkiliCore:
             await asyncio.sleep(60)
 
     async def snapchat_daily_push(self, app):
-        """Automatically sends Snapchat content brief to Justin every day at 9AM."""
+        """Automatically sends Snapchat content brief to Justin every day at 9AM Eastern Time."""
         while True:
-            now = datetime.now()
+            now = datetime.now(ET)
             if now.hour == 9 and now.minute == 0:
                 try:
                     plan = await self.hub.snapchat.generate_rich_daily_content()

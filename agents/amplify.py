@@ -5,7 +5,10 @@
 
 import logging
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from anthropic import Anthropic
+
+ET = ZoneInfo("America/Toronto")
 
 log = logging.getLogger("AMPLIFY")
 
@@ -122,9 +125,9 @@ class AmplifyAgent:
 
     async def heartbeat_check(self):
         """Called every 30 min — checks growth metrics and experiments."""
-        now = datetime.now()
+        now = datetime.now(ET)   # Eastern Time
         if 18 <= now.hour <= 22:
-            self.memory.daily_log("[AMPLIFY] Evening push window — engagement boost active")
+            self.memory.daily_log("[AMPLIFY] Evening push window (ET) — engagement boost active")
         return None
 
     async def music_release_campaign(self, song_title: str, release_date: str) -> str:

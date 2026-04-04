@@ -8,7 +8,10 @@ import asyncio
 import logging
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from anthropic import Anthropic
+
+ET = ZoneInfo("America/Toronto")
 
 log = logging.getLogger("INTEL.LiveBrief")
 
@@ -34,12 +37,12 @@ class IntelLiveBrief:
 
     async def run(self):
         while True:
-            now = datetime.now()
+            now = datetime.now(ET)       # Eastern Time — auto EDT/EST
             if now.hour == 8 and now.minute == 0:
-                log.info("[INTEL] Generating live morning brief...")
+                log.info("[INTEL] Generating live morning brief (8:00 ET)...")
                 brief = await self.generate_live_brief()
                 await self.app.bot.send_message(chat_id=JUSTIN_CHAT_ID, text=brief)
-                self.memory.daily_log("[INTEL] Morning brief sent at 08:00")
+                self.memory.daily_log("[INTEL] Morning brief sent at 08:00 ET")
             await asyncio.sleep(60)
 
     async def generate_live_brief(self) -> str:
