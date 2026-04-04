@@ -326,6 +326,77 @@ async def handle_tiktok_verification(request: web.Request) -> web.Response:
     )
 
 
+async def handle_privacy(request: web.Request) -> web.Response:
+    """Privacy Policy page — required by Meta, TikTok, and other platform app reviews."""
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Privacy Policy — CREOVA / AKILI</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: #0a0a0a; color: #d0d0d0; max-width: 780px;
+         margin: 0 auto; padding: 48px 24px; line-height: 1.8; }
+  h1   { color: #fff; font-size: 2rem; border-bottom: 1px solid #222; padding-bottom: 16px; }
+  h2   { color: #e0e0e0; font-size: 1.2rem; margin-top: 36px; }
+  p    { color: #aaa; }
+  a    { color: #69b4ff; }
+  .last-updated { color: #555; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<h1>Privacy Policy</h1>
+<p class="last-updated">Last updated: April 4, 2026</p>
+
+<p>This Privacy Policy applies to AKILI, the AI operating system built by
+<strong>CREOVA</strong> (Creative Innovation Space), operated by Justin Mafie.
+AKILI is a private, single-user automation system — it is not a public application
+and does not collect data from any third-party users.</p>
+
+<h2>1. What We Collect</h2>
+<p>AKILI connects to social media platforms (Instagram, Facebook, TikTok, LinkedIn,
+Twitter/X, Snapchat) and services (Gmail, GitHub) solely on behalf of the authorised
+operator (Justin Mafie). The following information may be accessed:</p>
+<ul>
+  <li>Account profile information (name, username, profile picture)</li>
+  <li>Content publishing permissions (to post on behalf of authorised accounts)</li>
+  <li>Email metadata (to send emails on behalf of authorised Gmail accounts)</li>
+  <li>Repository activity (to monitor authorised GitHub repositories)</li>
+</ul>
+
+<h2>2. How We Use It</h2>
+<p>All accessed data is used exclusively to automate tasks for the authorised operator.
+No data is sold, shared, or transmitted to any third party. No user data is stored
+beyond what is required for active API session tokens.</p>
+
+<h2>3. Data Storage</h2>
+<p>OAuth access tokens are stored as encrypted environment secrets in the Replit
+deployment environment. They are accessible only to the system operator and are
+never logged or exposed.</p>
+
+<h2>4. Data Deletion</h2>
+<p>To request deletion of any data associated with this application:</p>
+<ul>
+  <li>Instagram / Facebook: <a href="/instagram/data-deletion">Submit a deletion request</a></li>
+  <li>All other platforms: Email <a href="mailto:creativeinnovationspace@gmail.com">creativeinnovationspace@gmail.com</a></li>
+</ul>
+<p>Requests will be processed within 30 days.</p>
+
+<h2>5. Third-Party Platforms</h2>
+<p>AKILI uses official APIs provided by Meta (Instagram, Facebook), TikTok, LinkedIn,
+Twitter, Snap Inc., Google, and GitHub. Use of these APIs is governed by each
+platform's own terms of service and privacy policies.</p>
+
+<h2>6. Contact</h2>
+<p>For any privacy-related questions, contact:<br>
+<strong>CREOVA — Justin Mafie</strong><br>
+<a href="mailto:creativeinnovationspace@gmail.com">creativeinnovationspace@gmail.com</a></p>
+</body>
+</html>"""
+    return web.Response(text=html, content_type="text/html")
+
+
 def create_web_app() -> web.Application:
     from integrations.gmail_oauth      import handle_gmail_auth, handle_gmail_callback
     from integrations.instagram_oauth  import (handle_instagram_auth, handle_instagram_callback,
@@ -346,4 +417,6 @@ def create_web_app() -> web.Application:
     app.router.add_post("/instagram/data-deletion",   handle_data_deletion)
     app.router.add_get("/instagram/data-deletion",    handle_data_deletion)
     app.router.add_get("/instagram/deletion-status",  handle_deletion_status)
+    app.router.add_get("/privacy",                    handle_privacy)
+    app.router.add_get("/privacy/",                   handle_privacy)
     return app
