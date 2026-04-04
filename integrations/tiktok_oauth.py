@@ -401,7 +401,9 @@ def create_web_app() -> web.Application:
     from integrations.gmail_oauth      import handle_gmail_auth, handle_gmail_callback
     from integrations.instagram_oauth  import (handle_instagram_auth, handle_instagram_callback,
                                                handle_data_deletion, handle_deletion_status)
-    from dashboard import handle_dashboard, handle_api_status
+    from dashboard     import handle_dashboard, handle_api_status
+    from api.handlers  import (handle_api_root, handle_api_health, handle_api_command,
+                               handle_api_platforms, handle_api_feed)
     app = web.Application()
     app.router.add_get("/tiktok-developers-site-verification.txt",  handle_tiktok_verification)
     app.router.add_get("/tiktok-developers-site-verification.txt/", handle_tiktok_verification)
@@ -419,4 +421,10 @@ def create_web_app() -> web.Application:
     app.router.add_get("/instagram/deletion-status",  handle_deletion_status)
     app.router.add_get("/privacy",                    handle_privacy)
     app.router.add_get("/privacy/",                   handle_privacy)
+    # Phase 3 — Dashboard command API
+    app.router.add_get("/api/v3",              handle_api_root)
+    app.router.add_get("/health",              handle_api_health)
+    app.router.add_post("/command",            handle_api_command)
+    app.router.add_get("/status/platforms",    handle_api_platforms)
+    app.router.add_get("/feed",                handle_api_feed)
     return app

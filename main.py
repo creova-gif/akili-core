@@ -20,6 +20,11 @@ from memory.manager import MemoryManager
 from integrations import IntegrationHub
 from integrations.tiktok_oauth import create_web_app
 
+# Phase 3 modules
+from scheduler.pulse_scheduler    import PulseScheduler
+from scheduler.reach_autoresponder import ReachAutoResponder
+from scheduler.intel_live          import IntelLiveBrief
+
 # ── Logging ──────────────────────────────────────────────────
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
@@ -153,11 +158,67 @@ class AkiliCore:
         self.amplify = AmplifyAgent(ANTHROPIC_KEY, self.memory)
         self.hub     = IntegrationHub()
         self.identity = AKILI_IDENTITY
+
+        # Phase 3 — set by init_phase3()
+        self.scheduler  = None
+        self.responder  = None
+        self.live_intel = None
+
         log.info("AKILI CORE initialized — all 5 agents + integration hub loaded")
+
+    def init_phase3(self, telegram_app):
+        """Call after Telegram app is built to attach Phase 3 modules."""
+        self.scheduler  = PulseScheduler(telegram_app, self.hub)
+        self.live_intel = IntelLiveBrief(telegram_app, self.memory)
+
+        gmail_client = getattr(getattr(self.hub, "gmail", None), "_client", None) \
+                       or getattr(self.hub, "gmail", None)
+        self.responder = ReachAutoResponder(telegram_app, gmail_client)
+        log.info("Phase 3 modules initialized — PULSE Scheduler · REACH AutoResponder · INTEL LiveBrief")
 
     async def route_command(self, text: str, chat_id: str) -> str:
         """Routes Justin's commands to the right agent."""
         text_lower = text.lower()
+
+        # ── Phase 3: PULSE approval flow (POST / EDIT / SKIP) ─
+        if self.scheduler and text.upper().startswith(("POST ", "EDIT ", "SKIP ")):
+            result = await self.scheduler.handle_approval(text)
+            if result:
+                return result
+
+        # ── Phase 3: Pending posts list ───────────────────────
+        if "pending" in text_lower and "post" in text_lower:
+            if self.scheduler:
+                return self.scheduler.list_pending()
+
+        # ── Phase 3: Draft reply ──────────────────────────────
+        if text_lower.startswith("draft reply"):
+            context = text[len("draft reply"):].strip()
+            if self.responder:
+                return await self.responder.draft_reply(context)
+
+        # ── Phase 3: Repurpose content ────────────────────────
+        if text_lower.startswith("repurpose"):
+            content = text[9:].strip()
+            if self.responder:
+                return await self.responder.repurpose(content)
+
+        # ── Phase 3: Live research ────────────────────────────
+        if text_lower.startswith("research ") or text_lower.startswith("search "):
+            query = text.split(" ", 1)[1] if " " in text else text
+            if self.live_intel:
+                return await self.live_intel.live_research(query)
+
+        # ── Phase 3: VC tracker ───────────────────────────────
+        if "vc tracker" in text_lower or ("gopay" in text_lower and "vc" in text_lower):
+            if self.live_intel:
+                return await self.live_intel.live_vc_tracker()
+
+        # ── Phase 3: Competitor monitor ───────────────────────
+        if text_lower.startswith("competitor"):
+            product = text.split(" ", 1)[1].strip() if " " in text else "GoPay"
+            if self.live_intel:
+                return await self.live_intel.competitor_monitor(product)
 
         # ── Phase 2: Integration hub commands ─────────────────
         if any(w in text_lower for w in ["health check", "integration status", "platform status", "all platforms"]):
@@ -300,19 +361,25 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
         return
     await update.message.reply_text(
-        "⚡ AKILI ONLINE — Phase 2\n\n"
+        "⚡ AKILI OS — Phase 3 Online\n\n"
         "5 agents active:\n"
-        "🛡 SHIELD — Security + GitHub (14 repos)\n"
-        "📡 PULSE — Social Media (IG · Twitter · LinkedIn · TikTok · Snap · FB)\n"
+        "🛡 SHIELD — Security + GitHub\n"
+        "📡 PULSE — Social Media (auto-scheduler active)\n"
         "📨 REACH — Email + DMs + Repurposing\n"
-        "🔍 INTEL — Research + Leads + Daily Briefs\n"
+        "🔍 INTEL — Research + Leads + Live Briefs\n"
         "🔊 AMPLIFY — Music Promotion + Growth\n\n"
-        "Phase 2 commands:\n"
+        "Phase 3 commands:\n"
+        "  POST/EDIT/SKIP [id] — approve scheduled posts\n"
+        "  /pending — see posts waiting for approval\n"
+        "  'research [topic]' — live web search\n"
+        "  'vc tracker' — live GoPay investor intel\n"
+        "  'competitor [product]' — competitor news\n"
+        "  'draft reply [context]' — draft email reply\n"
+        "  'repurpose [content]' — all 5 platforms\n"
         "  'health check' — all platform status\n"
         "  'follower count' — snapshot across platforms\n"
-        "  'github scan' — all 14 repos\n"
         "  'snapchat plan' — today's content\n\n"
-        "Send me any command, Justin."
+        "Send me anything, Justin."
     )
 
 async def status(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -320,6 +387,14 @@ async def status(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     s = await akili.shield.status()
     await update.message.reply_text(f"📊 AKILI STATUS\n\n{s}")
+
+async def pending(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
+        return
+    if akili.scheduler:
+        await update.message.reply_text(akili.scheduler.list_pending())
+    else:
+        await update.message.reply_text("📡 PULSE Scheduler not yet initialized.")
 
 async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
@@ -370,9 +445,13 @@ async def main():
 
     app = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("status", status))
+    app.add_handler(CommandHandler("start",   start))
+    app.add_handler(CommandHandler("status",  status))
+    app.add_handler(CommandHandler("pending", pending))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    # Phase 3 — attach scheduler, responder, live intel
+    akili.init_phase3(app)
 
     log.info("AKILI CORE running — Telegram bot polling")
 
@@ -380,10 +459,16 @@ async def main():
         await app.start()
         await app.updater.start_polling(drop_pending_updates=True)
 
+        # Phase 1 + 2 background tasks
         asyncio.create_task(akili.heartbeat(app))
         asyncio.create_task(akili.morning_brief(app))
         asyncio.create_task(akili.snapchat_daily_push(app))
         asyncio.create_task(_run_web_server())
+
+        # Phase 3 background tasks
+        asyncio.create_task(akili.scheduler.run())
+        asyncio.create_task(akili.live_intel.run())
+        asyncio.create_task(akili.responder.run())
 
         # Keep running until interrupted
         stop = asyncio.Event()

@@ -1,7 +1,7 @@
 # AKILI AI — CREOVA Autonomous Operating System
 
 ## Overview
-AKILI is a multi-agent AI operating system for Justin Mafie and the CREOVA ecosystem. It runs as a Telegram bot and uses Claude to power 5 specialized agents. **Phase 2 complete** — all 8 platform integrations wired and live.
+AKILI is a multi-agent AI operating system for Justin Mafie and the CREOVA ecosystem. It runs as a Telegram bot and uses Claude to power 5 specialized agents. **Phase 3 active** — PULSE auto-scheduler, REACH auto-responder, INTEL live brief, and dashboard command API all running.
 
 ## Architecture
 
