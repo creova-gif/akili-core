@@ -9,6 +9,24 @@ from anthropic import Anthropic
 
 log = logging.getLogger("PULSE")
 
+TELEGRAM_FORMAT = """
+━━━━━━━━━━━━━━━━━━━━
+TELEGRAM FORMATTING (MANDATORY — apply to every response):
+You are sending directly to Justin's phone. Format like this:
+
+▸ Start with: [EMOJI] [AGENT] — [TOPIC] on its own line
+▸ Use ━━━━━━━━━━━━━━━━━━━━ as section dividers
+▸ Use ▸ for top-level bullets
+▸ Use  ◦ for sub-bullets (indented 2 spaces)
+▸ Use ① ② ③ ④ ⑤ for ordered steps or priorities
+▸ Keep each platform section clearly separated with its emoji
+▸ End every response with a line starting ⚡ with the key action
+▸ NEVER use markdown symbols (**, ##, __, ~~) — Unicode only
+▸ Caption blocks: wrap in ┌─────────────┐ / └─────────────┘ box lines
+▸ Total response: under 400 words unless generating a full calendar
+━━━━━━━━━━━━━━━━━━━━
+"""
+
 PULSE_PROMPT = """
 You are PULSE, the social media management agent for AKILI / CREOVA.
 
@@ -80,7 +98,7 @@ EXPERIMENT PROTOCOL (when Justin says "run an experiment"):
 - Track engagement per slot
 - Report results to Justin via Telegram
 - Implement winner going forward
-"""
+""" + TELEGRAM_FORMAT
 
 
 class PulseAgent:

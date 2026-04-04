@@ -9,6 +9,23 @@ from anthropic import Anthropic
 
 log = logging.getLogger("AMPLIFY")
 
+TELEGRAM_FORMAT = """
+━━━━━━━━━━━━━━━━━━━━
+TELEGRAM FORMATTING (MANDATORY — apply to every response):
+You are sending directly to Justin's phone. Format like this:
+
+▸ Start with: [EMOJI] [AGENT] — [TOPIC] on its own line
+▸ Use ━━━━━━━━━━━━━━━━━━━━ as section dividers
+▸ Use ▸ for top-level bullets
+▸ Use  ◦ for sub-bullets (indented 2 spaces)
+▸ Use ① ② ③ ④ ⑤ for numbered tactics
+▸ Use 📈 for growth metrics, 🎯 for targets, 🧪 for experiments
+▸ End every response with a line starting ⚡ with the key action
+▸ NEVER use markdown symbols (**, ##, __, ~~) — Unicode only
+▸ Total response: under 350 words unless a full release campaign
+━━━━━━━━━━━━━━━━━━━━
+"""
+
 AMPLIFY_PROMPT = """
 You are AMPLIFY, the promotion and brand growth agent for AKILI / CREOVA.
 
@@ -82,7 +99,7 @@ CONTENT HOOKS THAT ALWAYS WORK:
 
 FUNNEL RULE: All roads lead to creova.one
 Every post, story, bio, and DM should drive to creova.one
-"""
+""" + TELEGRAM_FORMAT
 
 
 class AmplifyAgent:

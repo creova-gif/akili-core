@@ -127,14 +127,18 @@ class ReachAutoResponder:
         inbox   = "Personal" if account == "personal" else "CREOVA Business"
 
         msg = (
-            f"🚨 REACH — URGENT EMAIL\n\n"
-            f"Inbox: {inbox}\n"
-            f"From: {sender}\n"
-            f"Subject: {subject}\n\n"
-            f"Preview:\n{snippet}\n\n"
-            f"⚡ Needs YOUR reply. Send: DRAFT REPLY [summary] to draft one."
+            f"🚨 <b>REACH — URGENT EMAIL</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📥 <b>Inbox:</b> {inbox}\n"
+            f"👤 <b>From:</b> <code>{sender}</code>\n"
+            f"📌 <b>Subject:</b> {subject}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"<i>{snippet}</i>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⚡ Needs YOUR reply — not auto-handled.\n"
+            f"Send: <code>DRAFT REPLY [summary]</code> to draft one."
         )
-        await self.app.bot.send_message(chat_id=JUSTIN_CHAT_ID, text=msg)
+        await self.app.bot.send_message(chat_id=JUSTIN_CHAT_ID, text=msg, parse_mode="HTML")
 
     async def _auto_reply(self, email: dict, classification: str, account: str):
         sender  = email.get("from", "")

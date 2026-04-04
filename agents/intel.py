@@ -9,6 +9,25 @@ from anthropic import Anthropic
 
 log = logging.getLogger("INTEL")
 
+TELEGRAM_FORMAT = """
+━━━━━━━━━━━━━━━━━━━━
+TELEGRAM FORMATTING (MANDATORY — apply to every response):
+You are sending directly to Justin's phone. Format like this:
+
+▸ Start with: [EMOJI] [AGENT] — [TOPIC] on its own line
+▸ Use ━━━━━━━━━━━━━━━━━━━━ as section dividers
+▸ Use ▸ for top-level bullets
+▸ Use  ◦ for sub-bullets (indented 2 spaces)
+▸ Use ① ② ③ ④ ⑤ for ordered steps or priorities
+▸ Use 🟢 🟡 🔴 for status indicators
+▸ Keep paragraphs to 2 sentences MAX — mobile screen
+▸ End every response with a line starting ⚡ with the key action
+▸ NEVER use markdown symbols (**, ##, __, ~~) — Unicode only
+▸ Use emojis as section markers, not decoration
+▸ Total response: under 350 words unless Justin asks for more
+━━━━━━━━━━━━━━━━━━━━
+"""
+
 INTEL_PROMPT = """
 You are INTEL, the research and intelligence agent for AKILI / CREOVA.
 
@@ -74,7 +93,7 @@ RESEARCH DEPTH LEVELS:
 - Quick scan: 5 min overview for Justin's morning brief
 - Standard: Full competitive analysis for a product
 - Deep dive: Investor-grade research for GoPay pitch
-"""
+""" + TELEGRAM_FORMAT
 
 
 class IntelAgent:

@@ -298,12 +298,19 @@ class AkiliCore:
                 try:
                     gh_scan = await self.hub.github.full_org_scan()
                     if gh_scan.get("alerts"):
-                        gh_alerts = "\n".join(gh_scan["alerts"])
+                        gh_alerts = "\n".join(f"▸ {a}" for a in gh_scan["alerts"])
                         log.warning(f"[GITHUB ALERT] {gh_alerts}")
                         if app and JUSTIN_CHAT_ID:
                             await app.bot.send_message(
                                 chat_id=JUSTIN_CHAT_ID,
-                                text=f"🐙 GITHUB ALERT\n\n{gh_alerts}"
+                                text=(
+                                    f"🐙 <b>SHIELD — GITHUB ALERT</b>\n"
+                                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                                    f"{gh_alerts}\n"
+                                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                                    f"⚡ Review and action required."
+                                ),
+                                parse_mode="HTML"
                             )
                 except Exception as e:
                     log.error(f"[GITHUB HEARTBEAT ERROR] {e}")
@@ -329,7 +336,7 @@ class AkiliCore:
                     brief = await self.intel.daily_brief()
                     await app.bot.send_message(
                         chat_id=JUSTIN_CHAT_ID,
-                        text=f"☀️ AKILI MORNING BRIEF\n\n{brief}"
+                        text=brief
                     )
                     log.info("[BRIEF] Morning brief sent to Justin")
                 except Exception as e:
@@ -361,50 +368,58 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
         return
     await update.message.reply_text(
-        "⚡ AKILI OS — Phase 3 Online\n\n"
-        "5 agents active:\n"
-        "🛡 SHIELD — Security + GitHub\n"
-        "📡 PULSE — Social Media (auto-scheduler active)\n"
-        "📨 REACH — Email + DMs + Repurposing\n"
-        "🔍 INTEL — Research + Leads + Live Briefs\n"
-        "🔊 AMPLIFY — Music Promotion + Growth\n\n"
-        "Phase 3 commands:\n"
-        "  POST/EDIT/SKIP [id] — approve scheduled posts\n"
-        "  /pending — see posts waiting for approval\n"
-        "  'research [topic]' — live web search\n"
-        "  'vc tracker' — live GoPay investor intel\n"
-        "  'competitor [product]' — competitor news\n"
-        "  'draft reply [context]' — draft email reply\n"
-        "  'repurpose [content]' — all 5 platforms\n"
-        "  'health check' — all platform status\n"
-        "  'follower count' — snapshot across platforms\n"
-        "  'snapchat plan' — today's content\n\n"
-        "Send me anything, Justin."
+        "⚡ <b>AKILI OS — Phase 3 Online</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "🟢 <b>5 Agents Active</b>\n"
+        "🛡 <b>SHIELD</b> — Security + GitHub\n"
+        "📡 <b>PULSE</b> — Social Media + Auto-Scheduler\n"
+        "📨 <b>REACH</b> — Email + DMs + Repurposing\n"
+        "🔍 <b>INTEL</b> — Research + Live Briefs + VC Tracker\n"
+        "🔊 <b>AMPLIFY</b> — Music Streams + Growth\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "📋 <b>Commands</b>\n"
+        "▸ <code>POST/EDIT/SKIP [id]</code> — approve posts\n"
+        "▸ <code>/pending</code> — posts awaiting approval\n"
+        "▸ <code>research [topic]</code> — live web search\n"
+        "▸ <code>vc tracker</code> — live GoPay investor intel\n"
+        "▸ <code>competitor [product]</code> — competitor news\n"
+        "▸ <code>draft reply [context]</code> — draft email\n"
+        "▸ <code>repurpose [content]</code> — all 5 platforms\n"
+        "▸ <code>health check</code> — all platform status\n"
+        "▸ <code>snapchat plan</code> — today's content\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "Send me anything, Justin.",
+        parse_mode="HTML"
     )
 
 async def status(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
         return
     s = await akili.shield.status()
-    await update.message.reply_text(f"📊 AKILI STATUS\n\n{s}")
+    await update.message.reply_text(
+        f"📊 <b>AKILI STATUS</b>\n━━━━━━━━━━━━━━━━━━━━\n\n{s}",
+        parse_mode="HTML"
+    )
 
 async def pending(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
         return
     if akili.scheduler:
-        await update.message.reply_text(akili.scheduler.list_pending())
+        await update.message.reply_text(akili.scheduler.list_pending(), parse_mode="HTML")
     else:
-        await update.message.reply_text("📡 PULSE Scheduler not yet initialized.")
+        await update.message.reply_text(
+            "📡 <b>PULSE</b> — Scheduler initializing...",
+            parse_mode="HTML"
+        )
 
 async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
         return
     text = update.message.text
     log.info(f"[COMMAND] Justin: {text}")
-    await update.message.reply_text("⚙️ Processing...")
+    await update.message.reply_text("⚙️ Processing...", parse_mode="HTML")
     try:
         response = await akili.route_command(text, JUSTIN_CHAT_ID)
-        # Telegram message limit is 4096 chars
         if len(response) > 4000:
             chunks = [response[i:i+4000] for i in range(0, len(response), 4000)]
             for chunk in chunks:
@@ -414,7 +429,10 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         akili.memory.daily_log(f"Command: {text[:60]} | Response logged")
     except Exception as e:
         log.error(f"[ERROR] {e}")
-        await update.message.reply_text(f"⚠️ Error: {str(e)}\nLogged. Investigating.")
+        await update.message.reply_text(
+            f"⚠️ <b>Error</b>\n<code>{str(e)[:200]}</code>\n\nLogged — investigating.",
+            parse_mode="HTML"
+        )
 
 
 # ── Entry Point ───────────────────────────────────────────────

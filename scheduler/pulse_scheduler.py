@@ -120,21 +120,27 @@ Write the post. Return ONLY valid JSON (no markdown):
         notes    = content.get("notes", "")
         accounts = PLATFORM_ACCOUNTS.get(platform, [])
 
+        PLATFORM_EMOJI = {
+            "instagram": "📸", "twitter": "🐦", "linkedin": "💼",
+            "tiktok": "🎵", "facebook": "👤"
+        }
+        emoji = PLATFORM_EMOJI.get(platform, "📡")
+
         msg = (
-            f"📡 PULSE — Post ready for approval\n\n"
-            f"Platform: {platform.upper()}\n"
-            f"Theme: {theme}\n"
-            f"Accounts: {', '.join(accounts)}\n\n"
+            f"📡 <b>PULSE — POST APPROVAL</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"{caption}\n\n{hashtags}\n"
+            f"{emoji} <b>{platform.upper()}</b>  ·  {theme}\n"
+            f"Accounts: <code>{', '.join(accounts)}</code>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"📸 Visual: {notes}\n\n"
-            f"Reply:\n"
-            f"✅ POST {approval_id}\n"
-            f"✏️ EDIT {approval_id} [your changes]\n"
-            f"❌ SKIP {approval_id}"
+            f"{caption}\n\n"
+            f"<i>{hashtags}</i>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📸 <i>{notes}</i>\n\n"
+            f"▸ ✅ <code>POST {approval_id}</code>\n"
+            f"▸ ✏️ <code>EDIT {approval_id} [your text]</code>\n"
+            f"▸ ❌ <code>SKIP {approval_id}</code>"
         )
-        await self.app.bot.send_message(chat_id=JUSTIN_CHAT_ID, text=msg)
+        await self.app.bot.send_message(chat_id=JUSTIN_CHAT_ID, text=msg, parse_mode="HTML")
         log.info(f"[Scheduler] Approval request sent: {approval_id}")
 
     async def handle_approval(self, text: str) -> str | None:
@@ -203,9 +209,12 @@ Write the post. Return ONLY valid JSON (no markdown):
 
     def list_pending(self) -> str:
         if not self.pending:
-            return "📡 PULSE: No posts pending approval."
-        lines = ["📡 PULSE — Pending approvals:\n"]
+            return "📡 PULSE — No posts pending approval right now."
+        lines = ["📡 PULSE — Pending Approvals\n━━━━━━━━━━━━━━━━━━━━\n"]
         for aid, post in self.pending.items():
-            preview = post["content"].get("caption", "")[:60]
-            lines.append(f"• {aid}: {preview}...")
+            preview = post["content"].get("caption", "")[:55]
+            platform = post["platform"].upper()
+            lines.append(f"▸ {platform}  ·  <code>{aid}</code>\n  {preview}...\n")
+        lines.append("━━━━━━━━━━━━━━━━━━━━")
+        lines.append("Reply POST/EDIT/SKIP [id] to action each one.")
         return "\n".join(lines)

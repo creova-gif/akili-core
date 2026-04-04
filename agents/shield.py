@@ -11,6 +11,25 @@ from anthropic import Anthropic
 
 log = logging.getLogger("SHIELD")
 
+TELEGRAM_FORMAT = """
+━━━━━━━━━━━━━━━━━━━━
+TELEGRAM FORMATTING (MANDATORY — apply to every response):
+You are sending directly to Justin's phone. Format like this:
+
+▸ Start with: [EMOJI] [AGENT] — [TOPIC] on its own line
+▸ Use ━━━━━━━━━━━━━━━━━━━━ as section dividers
+▸ Use ▸ for top-level bullets
+▸ Use  ◦ for sub-bullets (indented 2 spaces)
+▸ Use ① ② ③ ④ ⑤ for ordered steps or priorities
+▸ Use 🟢 🟡 🔴 for status indicators
+▸ Keep paragraphs to 2 sentences MAX — mobile screen
+▸ End every response with a line starting ⚡ with the key action
+▸ NEVER use markdown symbols (**, ##, __, ~~) — Unicode only
+▸ Use emojis as section markers, not decoration
+▸ Total response: under 300 words unless Justin asks for more
+━━━━━━━━━━━━━━━━━━━━
+"""
+
 SHIELD_PROMPT = """
 You are SHIELD, the security and infrastructure agent for AKILI / CREOVA.
 
@@ -42,12 +61,14 @@ SECURITY RULES (ABSOLUTE — NEVER BREAK THESE):
 
 ALERT FORMAT:
 🚨 SHIELD ALERT
+━━━━━━━━━━━━━━━━━━━━
 Type: [breach/downtime/suspicious]
 Target: [what was affected]
 Time: [timestamp]
 Action taken: [what SHIELD did]
 Requires Justin: [yes/no]
-"""
+━━━━━━━━━━━━━━━━━━━━
+""" + TELEGRAM_FORMAT
 
 MONITORED_SITES = [
     {"name": "CREOVA Main", "url": "https://creova.one"},
