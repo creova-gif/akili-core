@@ -36,10 +36,13 @@ _state_store: dict = {}
 
 def _get_config() -> dict:
     domain = os.environ.get("REPLIT_DEV_DOMAIN", "localhost:8080")
+    # Use stable production domain for redirect URI so it never changes
+    # and always matches what is registered in TikTok Developer Portal
+    prod_domain = os.environ.get("TIKTOK_REDIRECT_DOMAIN", "akili-core.replit.app")
     return {
         "client_key":    os.environ.get("TIKTOK_CLIENT_KEY", ""),
         "client_secret": os.environ.get("TIKTOK_CLIENT_SECRET", ""),
-        "redirect_uri":  f"https://{domain}/tiktok/callback",
+        "redirect_uri":  f"https://{prod_domain}/tiktok/callback",
         "domain":        domain,
     }
 
