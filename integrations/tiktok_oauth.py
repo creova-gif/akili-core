@@ -304,7 +304,8 @@ def create_web_app() -> web.Application:
                                                handle_data_deletion, handle_deletion_status)
     from dashboard import handle_dashboard, handle_api_status
     app = web.Application()
-    app.router.add_get("/tiktok-developers-site-verification.txt", handle_tiktok_verification)
+    app.router.add_get("/tiktok-developers-site-verification.txt",  handle_tiktok_verification)
+    app.router.add_get("/tiktok-developers-site-verification.txt/", handle_tiktok_verification)
     app.router.add_get("/",                    handle_dashboard)
     app.router.add_get("/status",              handle_index)
     app.router.add_get("/api/status",          handle_api_status)
