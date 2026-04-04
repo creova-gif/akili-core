@@ -48,19 +48,24 @@ class ReachAutoResponder:
         log.info("REACH AutoResponder initialized")
 
     def _gmail_ready(self) -> bool:
-        """Returns True only if Gmail is configured AND has a get_unread method."""
+        """Returns True if Gmail client has at least one authenticated service."""
         if not self.gmail:
-            return False
-        if not os.environ.get("GMAIL_PERSONAL_ADDRESS"):
             return False
         if not hasattr(self.gmail, "get_unread"):
             return False
-        return True
+        # Check if any services are actually authenticated
+        if hasattr(self.gmail, "services") and self.gmail.services:
+            return True
+        # Fallback: env var check
+        from config.accounts import EMAIL_ACCOUNTS
+        for acc in EMAIL_ACCOUNTS.values():
+            if acc.get("address"):
+                return True
+        return False
 
     async def run(self):
         if not self._gmail_ready():
-            log.info("[REACH] Gmail not fully configured — auto-responder in standby. "
-                     "Add GMAIL_PERSONAL_ADDRESS + GMAIL_BUSINESS_ADDRESS secrets to activate.")
+            log.info("[REACH] Gmail not connected — auto-responder in standby.")
             return
         while True:
             log.info("[REACH] Checking inboxes...")
@@ -74,7 +79,7 @@ class ReachAutoResponder:
 
     async def _check_inbox(self, account: str):
         try:
-            emails = await self.gmail.get_unread(account=account, max_results=15)
+            emails = await self.gmail.get_unread(account_key=account, max_results=15)
         except Exception as e:
             log.error(f"[REACH] Could not fetch {account} inbox: {e}")
             return

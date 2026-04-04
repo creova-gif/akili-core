@@ -161,13 +161,13 @@ TIKTOK_ACCOUNT = {
 EMAIL_ACCOUNTS = {
     "personal": {
         "label": "Justin Mafie personal Gmail",
-        "address": os.environ.get("GMAIL_PERSONAL_ADDRESS", ""),
+        "address": os.environ.get("GMAIL_PERSONAL_ADDRESS", "ayoubjustin2@gmail.com"),
         "credentials_path": "config/gmail_personal_credentials.json",
         "token_path":       "config/gmail_personal_token.json",
     },
     "business": {
         "label": "CREOVA business email",
-        "address": os.environ.get("GMAIL_BUSINESS_ADDRESS", ""),
+        "address": os.environ.get("GMAIL_BUSINESS_ADDRESS", "creativeinnovationspace@gmail.com"),
         "credentials_path": "config/gmail_business_credentials.json",
         "token_path":       "config/gmail_business_token.json",
     },
