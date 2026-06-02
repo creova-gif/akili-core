@@ -990,7 +990,7 @@ const AGENTS={
     ico:'🔍',bg:'rgba(167,139,250,.15)',name:'INTEL',
     sub:'Research · Leads · VC Tracking · Briefs',
     tasks:[
-      'Daily 8AM brief → Telegram: market news + today\'s priorities',
+      'Daily 8AM brief \u2192 Telegram: market news + today\\'s priorities',
       'VC tracker: GoPay investors (Partech, TLcom, Novastar + more)',
       'Lead generation: CREOVA Solutions + music deals Canada/Africa',
       'Outreach pitch generator: personalized from Justin Mafie',

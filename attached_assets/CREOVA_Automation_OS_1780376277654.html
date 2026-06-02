@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CREOVA Automation OS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;
+  --bg2:#111111;
+  --bg3:#181818;
+  --bg4:#222222;
+  --border:#2a2a2a;
+  --border2:#333333;
+  --text:#f0ede8;
+  --text2:#888882;
+  --text3:#555552;
+  --accent:#c8ff57;
+  --accent2:#57ffc8;
+  --accent3:#ff7557;
+  --purple:#a78bfa;
+  --blue:#57b4ff;
+  --gold:#ffc857;
+  --r:8px;
+  --rl:12px;
+  --rx:20px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+h1,h2,h3,h4{font-family:'Syne',sans-serif;font-weight:700;line-height:1.2}
+code,pre,.mono{font-family:'DM Mono',monospace}
+
+/* LAYOUT */
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:0;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.main{overflow-x:hidden}
+
+/* SIDEBAR */
+.sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-mark{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--accent);letter-spacing:-.02em}
+.logo-sub{font-size:10px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+.nav-section{padding:16px 12px 8px}
+.nav-section-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);cursor:pointer;transition:all .15s;font-size:13px;color:var(--text2);border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg4);color:var(--accent);font-weight:500}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .15s}
+.nav-item.active .nav-dot{background:var(--accent)}
+.nav-item:hover .nav-dot{background:var(--text2)}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border)}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500}
+.badge-green{background:rgba(200,255,87,.12);color:var(--accent)}
+.badge-blue{background:rgba(87,180,255,.12);color:var(--blue)}
+.badge-orange{background:rgba(255,117,87,.12);color:var(--accent3)}
+.badge-purple{background:rgba(167,139,250,.12);color:var(--purple)}
+.badge-gold{background:rgba(255,200,87,.12);color:var(--gold)}
+
+/* MAIN PANELS */
+.panel{display:none;padding:40px 48px}
+.panel.active{display:block}
+
+/* HERO */
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px}
+.hero-stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:20px 24px}
+.hero-stat-val{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--accent);line-height:1}
+.hero-stat-lbl{font-size:12px;color:var(--text2);margin-top:6px}
+.hero-banner{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:28px 32px;margin-bottom:32px;position:relative;overflow:hidden}
+.hero-banner::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(200,255,87,.06) 0%,transparent 70%)}
+.hero-banner h1{font-size:28px;color:var(--text);margin-bottom:8px}
+.hero-banner p{color:var(--text2);max-width:520px;font-size:14px}
+.hero-4grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+
+/* SECTION TITLES */
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.section-icon{width:36px;height:36px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.section-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+.section-sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* PROMPT CARDS */
+.prompt-grid{display:grid;gap:12px}
+.prompt-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;transition:border-color .15s}
+.prompt-card:hover{border-color:var(--border2)}
+.pc-header{padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;cursor:pointer}
+.pc-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:4px}
+.pc-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.pc-meta{font-size:11px;color:var(--text3)}
+.pc-toggle{font-size:18px;color:var(--text3);transition:transform .2s;flex-shrink:0;padding-top:2px}
+.pc-toggle.open{transform:rotate(45deg);color:var(--accent)}
+.pc-body{display:none;padding:0 20px 20px;border-top:1px solid var(--border)}
+.pc-body.open{display:block}
+.prompt-block{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:16px 0;position:relative}
+.prompt-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:'DM Mono',monospace}
+.prompt-text{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.copy-btn{position:absolute;top:12px;right:12px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:10px;color:var(--text2);cursor:pointer;transition:all .15s;font-family:'DM Mono',monospace}
+.copy-btn:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+.copy-btn.copied{background:var(--accent2);color:#000;border-color:var(--accent2)}
+.pc-info-row{display:flex;gap:20px;flex-wrap:wrap;margin:12px 0 0}
+.pc-info-item{font-size:11px;color:var(--text3)}
+.pc-info-item strong{color:var(--text2);font-weight:500}
+.impact-pill{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 10px;border-radius:20px}
+
+/* CURSOR RULES */
+.rules-block{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:16px;overflow:hidden}
+.rules-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.rules-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:600}
+.rules-body{padding:20px;background:var(--bg3)}
+.rules-code{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8;white-space:pre-wrap;word-break:break-word}
+
+/* NOTION OS */
+.notion-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:20px 24px;margin-bottom:16px}
+.notion-card h3{font-family:'Syne',sans-serif;font-size:15px;margin-bottom:12px;color:var(--text)}
+.property-row{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.property-row:last-child{border-bottom:none}
+.prop-name{color:var(--text3);min-width:140px;flex-shrink:0}
+.prop-val{color:var(--text2);flex:1}
+.prop-type{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);background:var(--bg3);padding:1px 6px;border-radius:4px;margin-left:auto}
+
+/* WEEKLY OS */
+.week-day{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:12px;overflow:hidden}
+.week-day-header{padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.day-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.day-focus{font-size:11px;color:var(--text3);margin-left:auto}
+.week-tasks{padding:12px 20px}
+.task-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.task-row:last-child{border-bottom:none}
+.task-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);min-width:50px;flex-shrink:0;padding-top:2px}
+.task-name{font-size:13px;color:var(--text);flex:1}
+.task-tool{font-size:10px;color:var(--text3);margin-top:2px}
+.task-auto{font-size:9px;font-weight:500;padding:2px 7px;border-radius:20px;background:rgba(200,255,87,.1);color:var(--accent);margin-left:8px;flex-shrink:0;align-self:flex-start;margin-top:2px}
+
+/* TOOL STACK */
+.tool-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.tool-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px}
+.tool-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;margin-bottom:6px}
+.tool-use{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
+.tool-cost{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3)}
+.setup-step{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px;margin-bottom:10px;display:flex;gap:16px;align-items:flex-start}
+.step-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);min-width:24px;padding-top:2px}
+.step-body h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;margin-bottom:4px}
+.step-body p{font-size:12px;color:var(--text2);line-height:1.6}
+.step-body code{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:11px;color:var(--accent)}
+
+/* DIVIDERS */
+.divider{border:none;border-top:1px solid var(--border);margin:28px 0}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* RESPONSIVE */
+@media(max-width:800px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:relative;height:auto}
+  .panel{padding:24px 20px}
+  .hero-4grid{grid-template-columns:repeat(2,1fr)}
+  .tool-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">CREOVA</div>
+    <div class="logo-sub">Automation OS · 2026</div>
+  </div>
+
+  <nav class="nav-section">
+    <div class="nav-section-label">Overview</div>
+    <button class="nav-item active" onclick="nav('overview')"><span class="nav-dot"></span>Dashboard</button>
+    <button class="nav-item" onclick="nav('setup')"><span class="nav-dot"></span>Setup guide</button>
+    <button class="nav-item" onclick="nav('cursor')"><span class="nav-dot"></span>Cursor rules</button>
+  </nav>
+
+  <nav class="nav-section">
+    <div class="nav-section-label">Agency automations</div>
+    <button class="nav-item" onclick="nav('agency')"><span class="nav-dot"></span>Client pipeline</button>
+    <button class="nav-item" onclick="nav('content')"><span class="nav-dot"></span>Content & social</button>
+  </nav>
+
+  <nav class="nav-section">
+    <div class="nav-section-label">Platform & brand</div>
+    <button class="nav-item" onclick="nav('seen')"><span class="nav-dot"></span>SEEN platform</button>
+    <button class="nav-item" onclick="nav('fashion')"><span class="nav-dot"></span>CREOVA Fashion</button>
+    <button class="nav-item" onclick="nav('finance')"><span class="nav-dot"></span>Finance & ops</button>
+  </nav>
+
+  <nav class="nav-section">
+    <div class="nav-section-label">Operating system</div>
+    <button class="nav-item" onclick="nav('weekly')"><span class="nav-dot"></span>Weekly routine</button>
+    <button class="nav-item" onclick="nav('notion')"><span class="nav-dot"></span>Notion templates</button>
+    <button class="nav-item" onclick="nav('prompts')"><span class="nav-dot"></span>Master prompt bank</button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <span class="badge badge-green">18 automations</span>
+    <span class="badge badge-blue" style="margin-top:6px;display:inline-flex">~22h saved/week</span>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- OVERVIEW -->
+<div class="panel active" id="panel-overview">
+  <div class="hero-banner">
+    <h1>CREOVA Automation OS</h1>
+    <p>Every prompt, workflow, Cursor rule, and weekly routine you need to run CREOVA Media, SEEN, and CREOVA Fashion on near-autopilot — built for a solo founder operating across three business lines simultaneously.</p>
+  </div>
+
+  <div class="hero-4grid">
+    <div class="hero-stat"><div class="hero-stat-val">18</div><div class="hero-stat-lbl">Production automations</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">~22h</div><div class="hero-stat-lbl">Saved per week</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">$0</div><div class="hero-stat-lbl">New tools needed</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">5</div><div class="hero-stat-lbl">Business lines covered</div></div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(200,255,87,.1)">🗺</div>
+    <div><div class="section-title">What's in this OS</div><div class="section-sub">Click any section in the sidebar to explore</div></div>
+  </div>
+
+  <div style="display:grid;gap:10px">
+    <div class="notion-card" style="cursor:pointer" onclick="nav('setup')">
+      <h3 style="color:var(--accent)">01 — Setup guide</h3>
+      <p style="font-size:13px;color:var(--text2)">Install Claude for Desktop (Cowork), connect your tools (Wave, Notion, Calendly, Mailchimp, Later), configure your Cursor workspace. 30-minute setup, permanent leverage.</p>
+    </div>
+    <div class="notion-card" style="cursor:pointer" onclick="nav('cursor')">
+      <h3 style="color:var(--blue)">02 — Cursor rules (.cursorrules)</h3>
+      <p style="font-size:13px;color:var(--text2)">Your full <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-size:11px">.cursorrules</code> file for SEEN platform development. Enforces CREOVA brand voice, CMF compliance patterns, and tech stack conventions across all code Claude writes for you.</p>
+    </div>
+    <div class="notion-card" style="cursor:pointer" onclick="nav('agency')">
+      <h3 style="color:var(--gold)">03 — Agency automations (4 workflows)</h3>
+      <p style="font-size:13px;color:var(--text2)">Inquiry → proposal → contract → invoice → follow-up. The full client lifecycle, automated. Saves ~8h/week.</p>
+    </div>
+    <div class="notion-card" style="cursor:pointer" onclick="nav('content')">
+      <h3 style="color:var(--accent3)">04 — Content & social (4 workflows)</h3>
+      <p style="font-size:13px;color:var(--text2)">Weekly calendar, caption batching, newsletter, performance debrief. Saves ~5h/week.</p>
+    </div>
+    <div class="notion-card" style="cursor:pointer" onclick="nav('seen')">
+      <h3 style="color:var(--purple)">05 — SEEN platform (3 workflows)</h3>
+      <p style="font-size:13px;color:var(--text2)">Creator onboarding, CMF grant drafting, weekly metrics digest. The highest-leverage automations for your biggest funding opportunity.</p>
+    </div>
+    <div class="notion-card" style="cursor:pointer" onclick="nav('weekly')">
+      <h3 style="color:var(--accent2)">06 — Weekly OS (Mon–Sun)</h3>
+      <p style="font-size:13px;color:var(--text2)">A day-by-day routine where every automation fires at the right time. Built around your Brock-area event schedule and the June CMF deadline.</p>
+    </div>
+    <div class="notion-card" style="cursor:pointer" onclick="nav('notion')">
+      <h3 style="color:var(--text)">07 — Notion templates</h3>
+      <p style="font-size:13px;color:var(--text2)">Exact database schemas for: Client CRM, SEEN Creator Registry, Content Calendar, Grant Tracker, and Capacity Monitor.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div class="panel" id="panel-setup">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(200,255,87,.1)">⚙️</div>
+    <div><div class="section-title">Setup guide — 30 min to full automation</div><div class="section-sub">Do this once. Everything else compounds from here.</div></div>
+  </div>
+
+  <div class="tool-grid">
+    <div class="tool-card">
+      <div class="tool-name" style="color:var(--accent)">Claude for Desktop</div>
+      <div class="tool-use">Your primary AI brain. Use it for all prompts in this OS. The Cowork integration lets Claude read your files and operate across your apps.</div>
+      <div class="tool-cost">claude.ai/download — free tier works, Pro ($20/mo) recommended</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name" style="color:var(--blue)">Cursor</div>
+      <div class="tool-use">AI code editor for building SEEN. Your .cursorrules file (in this OS) trains it on your stack, brand voice, and CMF compliance patterns.</div>
+      <div class="tool-cost">cursor.so — free tier, Pro $20/mo for max usage</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name" style="color:var(--gold)">Notion</div>
+      <div class="tool-use">Your operating brain. Client CRM, content calendar, grant tracker, capacity monitor, and creator registry all live here.</div>
+      <div class="tool-cost">notion.so — free for solo, Plus $10/mo for advanced features</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name" style="color:var(--accent2)">Wave</div>
+      <div class="tool-use">Free invoicing and accounting. Claude reads your Wave exports to run the invoice chaser and monthly close automations.</div>
+      <div class="tool-cost">waveapps.com — free forever for invoicing</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name" style="color:var(--purple)">Later / Buffer</div>
+      <div class="tool-use">Social scheduling. Claude writes the captions, you paste them into Later and schedule. Content calendar runs on autopilot.</div>
+      <div class="tool-cost">later.com — Starter $18/mo covers Instagram + TikTok + LinkedIn</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name" style="color:var(--accent3)">Mailchimp</div>
+      <div class="tool-use">Email list and newsletters. Claude drafts every email. You paste, adjust subject line, and send. One hour becomes 10 minutes.</div>
+      <div class="tool-cost">mailchimp.com — free up to 500 contacts</div>
+    </div>
+  </div>
+
+  <div class="section-header" style="margin-top:32px">
+    <div class="section-icon" style="background:rgba(87,180,255,.1)">📋</div>
+    <div><div class="section-title">Step-by-step setup</div></div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">01</div>
+    <div class="step-body">
+      <h4>Install Claude Desktop + enable Cowork</h4>
+      <p>Download from claude.ai/download. In Settings → Features, enable "Claude Cowork" and "Integrations". Connect Google Workspace (Gmail + Drive + Calendar). This is your foundation — every automation that touches email or docs runs through this connection.</p>
+    </div>
+  </div>
+  <div class="setup-step">
+    <div class="step-num">02</div>
+    <div class="step-body">
+      <h4>Install Cursor + drop your .cursorrules file</h4>
+      <p>Download Cursor from cursor.so. Create a new workspace for SEEN platform dev. Copy the entire Cursor Rules section from this OS into a file named <code>.cursorrules</code> in your project root. Every time Cursor writes code for SEEN, it will follow your stack conventions, brand voice rules, and CMF data-structure patterns automatically.</p>
+    </div>
+  </div>
+  <div class="setup-step">
+    <div class="step-num">03</div>
+    <div class="step-body">
+      <h4>Build your Notion workspace</h4>
+      <p>Create a new Notion workspace called "CREOVA OS". Build these 5 databases using the schemas in the Notion Templates section: <code>Client CRM</code>, <code>Content Calendar</code>, <code>SEEN Creator Registry</code>, <code>Grant Tracker</code>, <code>Capacity Monitor</code>. All your automations write their outputs into these databases.</p>
+    </div>
+  </div>
+  <div class="setup-step">
+    <div class="step-num">04</div>
+    <div class="step-body">
+      <h4>Export your Wave data and set up weekly exports</h4>
+      <p>In Wave: go to Accounting → Reports → set a recurring Friday export of your transactions and outstanding invoices as CSV. Save each export to a Google Drive folder called <code>CREOVA / Finance / Wave Exports</code>. Every Monday, Claude reads this folder for the invoice chaser and financial close automations.</p>
+    </div>
+  </div>
+  <div class="setup-step">
+    <div class="step-num">05</div>
+    <div class="step-body">
+      <h4>Create your Claude system prompt (saved context)</h4>
+      <p>In Claude Desktop, start a new conversation and paste this as your first message — save it as a Project called "CREOVA Ops". This primes every session with your business context so you never have to re-explain who you are. Copy the Master System Prompt from the Prompt Bank section.</p>
+    </div>
+  </div>
+  <div class="setup-step">
+    <div class="step-num">06</div>
+    <div class="step-body">
+      <h4>Set up Calendly → Notion integration</h4>
+      <p>Use Calendly's Zapier integration (free tier) to auto-create a new row in your Client CRM Notion database every time someone books a discovery call. Fields to map: Name, Email, Event Type, Date, Notes. This triggers your inquiry automation without any manual copy-paste.</p>
+    </div>
+  </div>
+  <div class="setup-step">
+    <div class="step-num">07</div>
+    <div class="step-body">
+      <h4>Run your first automation (Invoice Chaser)</h4>
+      <p>Export this week's Wave outstanding invoices as CSV. Open Claude Desktop. Paste the invoice chaser prompt from the Finance section. Attach the CSV. Review the follow-up emails Claude drafts. Approve and send. You just automated something that used to take 90 minutes. Do this every Monday.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CURSOR RULES -->
+<div class="panel" id="panel-cursor">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(87,180,255,.1)">⌨️</div>
+    <div><div class="section-title">Cursor rules — .cursorrules</div><div class="section-sub">Drop this file in your SEEN project root. Cursor reads it on every AI completion.</div></div>
+  </div>
+
+  <div class="rules-block">
+    <div class="rules-header">
+      <div class="rules-title">.cursorrules — SEEN Platform / CREOVA Media</div>
+      <button class="copy-btn" onclick="copyBlock('cursor-rules-content', this)">Copy all</button>
+    </div>
+    <div class="rules-body">
+      <div class="rules-code" id="cursor-rules-content"># CREOVA / SEEN Platform — Cursor Rules
+# Drop this file as .cursorrules in project root
+# Last updated: 2026
+
+## WHO YOU ARE
+You are the AI coding partner for Justin Mafie, founder of CREOVA Media.
+You are building SEEN — a culturally-centred audio-first storytelling platform
+for underrepresented Canadian creators. You understand:
+- The product must qualify for Canada Media Fund (CMF) Convergent Stream grants
+- Every data model must support CMF-required content metrics tracking
+- Creator IP ownership is a core product value — never suggest patterns that
+  compromise it
+- The platform serves equity-deserving creators: Indigenous, Black Canadian,
+  francophone, newcomer storytellers
+- CREOVA's brand voice: culturally grounded, empowering, founder-to-community,
+  never corporate
+
+## TECH STACK
+Frontend: Next.js 14 (App Router), TypeScript, Tailwind CSS
+Backend: Node.js, Prisma ORM, PostgreSQL
+Auth: Clerk (or NextAuth with JWT)
+File storage: Supabase Storage or AWS S3
+Payments: Stripe (subscriptions), Stripe Connect (creator payouts)
+Deployment: Vercel (frontend), Railway or Render (backend)
+Analytics: PostHog (privacy-first, CMF-compatible)
+Email: Resend
+
+Always use these. Never suggest alternatives unless explicitly asked.
+
+## CODE STYLE
+- TypeScript strict mode. No `any` types without a comment explaining why.
+- Functional components only. No class components.
+- Use server components by default. Client components only when needed for
+  interactivity — add 'use client' directive with a comment explaining why.
+- All database queries go through Prisma service layer in /src/services/
+- Never put business logic in API routes — extract to service functions
+- File naming: kebab-case for files, PascalCase for components, camelCase
+  for functions and variables
+- Always handle loading and error states in UI components
+- Write accessible HTML: semantic elements, aria-labels on icon buttons,
+  alt text on images
+
+## CMF COMPLIANCE PATTERNS
+The Canada Media Fund requires specific content tracking. Always implement:
+- Content type classification: AUDIO_STORY | PODCAST | NARRATED | ORIGINAL_SCORE
+- Creator demographics: voluntary self-identification fields (never required)
+  → equity_deserving: boolean
+  → indigenous_creator: boolean
+  → black_creator: boolean
+  → francophone: boolean
+  → newcomer_creator: boolean
+- Content language: primary_language (ISO 639-1) + secondary_languages array
+- Canadian content flag: is_canadian_content: boolean (auto-true if creator
+  is Canadian-registered, manually overridable)
+- Engagement metrics stored per-content: plays, completion_rate, avg_duration,
+  unique_listeners — CMF requires these for reporting
+- Never collect these for algorithmic ranking — they are compliance metrics only.
+  Explain this in code comments.
+
+## CREATOR IP PROTECTION
+- Creators retain full IP on everything they upload. Reflect this in:
+  → License field on all content records: default 'CREATOR_RETAINED'
+  → Never implement auto-licensing or platform-owned content patterns
+  → Revenue splits stored per-content, not platform-wide
+  → Creator can delete any content and trigger platform removal within 24h
+    (log deletion requests with timestamp for compliance)
+- When building any content ingestion feature, add a comment: 
+  "// Creator retains all IP. Platform has streaming license only."
+
+## DATABASE PATTERNS
+Every table must include:
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  is_deleted Boolean @default(false)  // soft deletes only — CMF audit trail
+
+Prisma schema example for content:
+```prisma
+model Story {
+  id                String    @id @default(cuid())
+  creator_id        String
+  title             String
+  description       String?
+  audio_url         String
+  cover_url         String?
+  duration_seconds  Int
+  primary_language  String    @default("en")
+  is_canadian       Boolean   @default(true)
+  content_type      ContentType @default(AUDIO_STORY)
+  license           String    @default("CREATOR_RETAINED")
+  equity_tagged     Boolean   @default(false)
+  is_published      Boolean   @default(false)
+  is_deleted        Boolean   @default(false)
+  plays             Int       @default(0)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  creator           Creator   @relation(fields: [creator_id], references: [id])
+}
+```
+
+## API PATTERNS
+All API routes follow this structure:
+```typescript
+// /src/app/api/[resource]/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { [Resource]Service } from '@/services/[resource].service'
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const data = await [Resource]Service.getAll(session.user.id)
+    return NextResponse.json({ data })
+  } catch (error) {
+    console.error('[GET /api/[resource]]', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+```
+
+## ERROR HANDLING
+- All service functions return { data, error } tuples — never throw from services
+- Log errors with context: console.error('[ServiceName.methodName]', error)
+- User-facing errors: plain English, no stack traces, no internal codes
+- Always validate request bodies with Zod before processing
+
+## SECURITY
+- Never log sensitive data: passwords, tokens, payment info, personal demographics
+- Creator demographics (equity fields) are encrypted at rest — use Prisma middleware
+- Rate limit all public API endpoints using Upstash Redis
+- CORS: restrict to creova.one and seen.creova.one origins only
+- Validate file uploads: audio only (mp3, wav, m4a, ogg), max 500MB per file
+
+## BRAND VOICE (for UI copy)
+When writing UI strings, error messages, empty states, or onboarding copy:
+- Warm, empowering, peer-to-peer — "Your story, your rights" not "Content Policy"
+- Cultural specificity is a feature — acknowledge it, don't flatten it
+- Never use: "content creator", "influencer", "algorithm", "engagement"
+- Use: "storyteller", "your work", "your community", "your audience"
+- Empty states should feel inviting: "Your first story is waiting to be told."
+  Not: "No content uploaded."
+- Error messages: "Something went wrong — try again, or reach out to us directly."
+  Not: "Error 500: Internal server error."
+
+## COMMENTS
+- Every file needs a one-line comment at the top explaining its purpose
+- Comment non-obvious business logic, especially CMF-related patterns
+- Mark TODOs with your name: // TODO(justin): implement creator payout schedule
+- Mark CMF compliance requirements: // CMF: required field for grant reporting</div>
+    </div>
+  </div>
+
+  <div class="rules-block" style="margin-top:16px">
+    <div class="rules-header">
+      <div class="rules-title">Claude project context — paste this to start every SEEN dev session</div>
+      <button class="copy-btn" onclick="copyBlock('claude-context', this)">Copy</button>
+    </div>
+    <div class="rules-body">
+      <div class="rules-code" id="claude-context">I'm Justin Mafie, founder of CREOVA Media (creova.one), a black-owned creative agency
+and platform company based in Ontario, Canada. My tech stack for SEEN:
+- Next.js 14 App Router, TypeScript, Tailwind, Prisma, PostgreSQL, Clerk auth, Vercel
+- SEEN must qualify for Canada Media Fund (CMF) Convergent Stream grants
+- Creator IP ownership is non-negotiable — creators retain all rights
+- Target: equity-deserving Canadian creators (Black, Indigenous, francophone, newcomer)
+
+My constraints: I'm a solo founder. I need production-quality code that's readable
+and maintainable by me without a team. Prioritize clarity over cleverness.
+Always explain what you built and why, especially for CMF-compliance patterns.
+
+Current focus: [describe what you're building today]</div>
+    </div>
+  </div>
+</div>
+
+<!-- AGENCY -->
+<div class="panel" id="panel-agency">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(255,200,87,.1)">📸</div>
+    <div><div class="section-title">Client pipeline automations</div><div class="section-sub">Inquiry → booking → delivery → payment · saves ~8h/week</div></div>
+  </div>
+  <div class="prompt-grid" id="agency-prompts"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="panel" id="panel-content">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(255,117,87,.1)">📱</div>
+    <div><div class="section-title">Content & social automations</div><div class="section-sub">Instagram · TikTok · LinkedIn · Email · saves ~5h/week</div></div>
+  </div>
+  <div class="prompt-grid" id="content-prompts"></div>
+</div>
+
+<!-- SEEN -->
+<div class="panel" id="panel-seen">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(167,139,250,.1)">🎙</div>
+    <div><div class="section-title">SEEN platform automations</div><div class="section-sub">Creator growth · CMF grant · metrics · your highest-leverage work</div></div>
+  </div>
+  <div class="prompt-grid" id="seen-prompts"></div>
+</div>
+
+<!-- FASHION -->
+<div class="panel" id="panel-fashion">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(255,117,87,.1)">👕</div>
+    <div><div class="section-title">CREOVA Fashion automations</div><div class="section-sub">Drops · VIP · customer support</div></div>
+  </div>
+  <div class="prompt-grid" id="fashion-prompts"></div>
+</div>
+
+<!-- FINANCE -->
+<div class="panel" id="panel-finance">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(87,255,200,.1)">💰</div>
+    <div><div class="section-title">Finance & operations</div><div class="section-sub">Revenue · grants · capacity · outreach</div></div>
+  </div>
+  <div class="prompt-grid" id="finance-prompts"></div>
+</div>
+
+<!-- WEEKLY OS -->
+<div class="panel" id="panel-weekly">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(87,255,200,.1)">📅</div>
+    <div><div class="section-title">Weekly operating routine</div><div class="section-sub">When every automation fires — built for a solo founder across 3 business lines</div></div>
+  </div>
+
+  <div class="week-day">
+    <div class="week-day-header">
+      <div class="day-name" style="color:var(--accent)">Monday</div>
+      <div class="day-focus">Operations day · ~2.5h total (mostly reviewing Claude outputs)</div>
+    </div>
+    <div class="week-tasks">
+      <div class="task-row"><div class="task-time">8:00</div><div><div class="task-name">Invoice chaser run <span class="task-auto">AUTO</span></div><div class="task-tool">Claude + Wave export → review 5 min → approve → send</div></div></div>
+      <div class="task-row"><div class="task-time">8:15</div><div><div class="task-name">Compliance & grant deadline review <span class="task-auto">AUTO</span></div><div class="task-tool">Claude → what's due in 30 days → add to Notion</div></div></div>
+      <div class="task-row"><div class="task-time">8:30</div><div><div class="task-name">Capacity monitor <span class="task-auto">AUTO</span></div><div class="task-tool">Claude reads Notion project list + Calendly → flags overbooked weeks</div></div></div>
+      <div class="task-row"><div class="task-time">9:00</div><div><div class="task-name">SEEN weekly metrics digest <span class="task-auto">AUTO</span></div><div class="task-tool">Claude reads platform export → plain-English summary → save to Notion</div></div></div>
+      <div class="task-row"><div class="task-time">9:30</div><div><div class="task-name">Discovery calls + client shoots</div><div class="task-tool">Calendly bookings from the week. Claude prep'd briefs already in Notion.</div></div></div>
+    </div>
+  </div>
+
+  <div class="week-day">
+    <div class="week-day-header">
+      <div class="day-name" style="color:var(--blue)">Tuesday</div>
+      <div class="day-focus">Outreach + SEEN dev</div>
+    </div>
+    <div class="week-tasks">
+      <div class="task-row"><div class="task-time">9:00</div><div><div class="task-name">Weekly DM outreach batch — 10 targets <span class="task-auto">AUTO</span></div><div class="task-tool">Claude drafts all 10 personalized DMs → you review + send in 20 min</div></div></div>
+      <div class="task-row"><div class="task-time">10:00</div><div><div class="task-name">SEEN platform dev — Cursor session</div><div class="task-tool">Cursor with .cursorrules active. Build one feature. Use Claude for architecture decisions.</div></div></div>
+      <div class="task-row"><div class="task-time">14:00</div><div><div class="task-name">Creator outreach — SEEN pipeline</div><div class="task-tool">DM 5 creators for SEEN. Claude drafted the messages Monday. Send + track in Notion.</div></div></div>
+    </div>
+  </div>
+
+  <div class="week-day">
+    <div class="week-day-header">
+      <div class="day-name" style="color:var(--gold)">Wednesday</div>
+      <div class="day-focus">Shoots + client delivery</div>
+    </div>
+    <div class="week-tasks">
+      <div class="task-row"><div class="task-time">All day</div><div><div class="task-name">Client shoots / editing</div><div class="task-tool">Shooting or editing. Claude not needed. This is your craft time.</div></div></div>
+      <div class="task-row"><div class="task-time">Evening</div><div><div class="task-name">Post-delivery follow-up + review ask <span class="task-auto">AUTO</span></div><div class="task-tool">If you delivered anything today — run the follow-up automation. 5 min.</div></div></div>
+    </div>
+  </div>
+
+  <div class="week-day">
+    <div class="week-day-header">
+      <div class="day-name" style="color:var(--purple)">Thursday</div>
+      <div class="day-focus">Proposals + fashion + SEEN dev</div>
+    </div>
+    <div class="week-tasks">
+      <div class="task-row"><div class="task-time">9:00</div><div><div class="task-name">New inquiry proposals <span class="task-auto">AUTO</span></div><div class="task-tool">Claude drafts proposals for this week's inquiries → review → send</div></div></div>
+      <div class="task-row"><div class="task-time">10:30</div><div><div class="task-name">Fashion: VIP message + Shopify updates <span class="task-auto">AUTO</span></div><div class="task-tool">If a drop is coming: Claude drafts VIP access message → review → send</div></div></div>
+      <div class="task-row"><div class="task-time">12:00</div><div><div class="task-name">CMF application sprint (June deadline)</div><div class="task-tool">90 min focused session. Claude drafts one section per session. You refine. Target: 1 section/week starting now.</div></div></div>
+    </div>
+  </div>
+
+  <div class="week-day">
+    <div class="week-day-header">
+      <div class="day-name" style="color:var(--accent3)">Friday</div>
+      <div class="day-focus">Content day · all social media outputs produced</div>
+    </div>
+    <div class="week-tasks">
+      <div class="task-row"><div class="task-time">9:00</div><div><div class="task-name">Performance debrief — last week <span class="task-auto">AUTO</span></div><div class="task-tool">Paste analytics → Claude gives recommendations → informs next week's plan</div></div></div>
+      <div class="task-row"><div class="task-time">9:30</div><div><div class="task-name">Weekly content calendar build <span class="task-auto">AUTO</span></div><div class="task-tool">Claude produces full next-week calendar: 3 IG posts, 2 TikToks, 2 LinkedIn</div></div></div>
+      <div class="task-row"><div class="task-time">10:30</div><div><div class="task-name">Caption + hashtag batch <span class="task-auto">AUTO</span></div><div class="task-tool">Claude writes all captions + hashtag sets → paste into Later → schedule done</div></div></div>
+      <div class="task-row"><div class="task-time">11:30</div><div><div class="task-name">Monthly newsletter draft (last Friday of month) <span class="task-auto">AUTO</span></div><div class="task-tool">Claude drafts full newsletter → paste into Mailchimp → schedule for Tuesday</div></div></div>
+      <div class="task-row"><div class="task-time">13:00</div><div><div class="task-name">Wave export — save to Drive</div><div class="task-tool">Export this week's Wave transactions to Google Drive. Takes 2 min. Feeds Monday automations.</div></div></div>
+    </div>
+  </div>
+
+  <div class="week-day">
+    <div class="week-day-header">
+      <div class="day-name" style="color:var(--accent2)">Sunday</div>
+      <div class="day-focus">Review + reset · 30 min max</div>
+    </div>
+    <div class="week-tasks">
+      <div class="task-row"><div class="task-time">Evening</div><div><div class="task-name">Weekly review — 3 questions</div><div class="task-tool">What shipped? What's outstanding? What does Monday need? Write in Notion. Claude helps if you want a structured review.</div></div></div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:20px 24px">
+    <h3 style="font-family:'Syne',sans-serif;font-size:15px;margin-bottom:12px;color:var(--accent)">Monthly routines</h3>
+    <div class="task-row" style="padding:10px 0"><div class="task-time">1st</div><div><div class="task-name">Monthly financial close <span class="task-auto">AUTO</span></div><div class="task-tool">Claude reads Wave export → P&L → accountant packet → 15 min review</div></div></div>
+    <div class="task-row" style="padding:10px 0"><div class="task-time">1st</div><div><div class="task-name">SEEN creator metrics → investor update draft <span class="task-auto">AUTO</span></div><div class="task-tool">Claude turns metrics into one-pager suitable for CMF reviewers or pre-seed investors</div></div></div>
+    <div class="task-row" style="padding:10px 0"><div class="task-time">Last Fri</div><div><div class="task-name">CMF application review session</div><div class="task-tool">Review the section drafted this month. Claude does a final compliance check against CMF criteria.</div></div></div>
+  </div>
+</div>
+
+<!-- NOTION TEMPLATES -->
+<div class="panel" id="panel-notion">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(255,255,255,.06)">🗃</div>
+    <div><div class="section-title">Notion database schemas</div><div class="section-sub">Build these 5 databases in your CREOVA OS workspace</div></div>
+  </div>
+
+  <div class="notion-card">
+    <h3>1. Client CRM</h3>
+    <div class="property-row"><div class="prop-name">Client name</div><div class="prop-val">Company or individual name</div><div class="prop-type">Title</div></div>
+    <div class="property-row"><div class="prop-name">Status</div><div class="prop-val">Inquiry → Proposal sent → Deposit paid → In progress → Delivered → Invoiced → Paid → Repeat client</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Service type</div><div class="prop-val">Event photo · Event video · Brand shoot · Social mgmt · Full package · Design</div><div class="prop-type">Multi-select</div></div>
+    <div class="property-row"><div class="prop-name">Event / shoot date</div><div class="prop-val">Exact date of the engagement</div><div class="prop-type">Date</div></div>
+    <div class="property-row"><div class="prop-name">Invoice amount</div><div class="prop-val">Total value in CAD</div><div class="prop-type">Number ($)</div></div>
+    <div class="property-row"><div class="prop-name">Deposit received</div><div class="prop-val">50% deposit — check when paid</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Balance paid</div><div class="prop-val">Final payment — check when received</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Referral source</div><div class="prop-val">How they found CREOVA</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Retainer potential</div><div class="prop-val">Flag clients worth converting to monthly</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Notes</div><div class="prop-val">Claude-generated brief + any client-specific details</div><div class="prop-type">Text</div></div>
+    <div class="property-row"><div class="prop-name">Instagram handle</div><div class="prop-val">For tagging after delivery</div><div class="prop-type">Text</div></div>
+    <div class="property-row"><div class="prop-name">Follow-up sent</div><div class="prop-val">48h post-delivery check-in done</div><div class="prop-type">Checkbox</div></div>
+  </div>
+
+  <div class="notion-card">
+    <h3>2. Content calendar</h3>
+    <div class="property-row"><div class="prop-name">Post title / concept</div><div class="prop-val">Brief description of the post</div><div class="prop-type">Title</div></div>
+    <div class="property-row"><div class="prop-name">Platform</div><div class="prop-val">Instagram · TikTok · LinkedIn · Email</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Content pillar</div><div class="prop-val">Client work · BTS · Founder story · Cultural · SEEN update · Fashion</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Scheduled date</div><div class="prop-val">When it goes live</div><div class="prop-type">Date</div></div>
+    <div class="property-row"><div class="prop-name">Status</div><div class="prop-val">Draft → Caption ready → Asset ready → Scheduled → Live</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Caption</div><div class="prop-val">Claude-generated caption (paste here)</div><div class="prop-type">Text</div></div>
+    <div class="property-row"><div class="prop-name">Hashtags</div><div class="prop-val">Claude-generated hashtag set</div><div class="prop-type">Text</div></div>
+    <div class="property-row"><div class="prop-name">Asset status</div><div class="prop-val">Photo/video ready for this post?</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Performance notes</div><div class="prop-val">Reach, engagement — added after it goes live</div><div class="prop-type">Text</div></div>
+  </div>
+
+  <div class="notion-card">
+    <h3>3. SEEN creator registry</h3>
+    <div class="property-row"><div class="prop-name">Creator name</div><div class="prop-val">Full name or stage name</div><div class="prop-type">Title</div></div>
+    <div class="property-row"><div class="prop-name">Status</div><div class="prop-val">Outreach sent → Interest confirmed → Onboarding → Active → Featured</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Content type</div><div class="prop-val">Audio story · Podcast · Narrated · Original score</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Community</div><div class="prop-val">Black Canadian · Indigenous · Francophone · Newcomer · Other</div><div class="prop-type">Multi-select</div></div>
+    <div class="property-row"><div class="prop-name">Language</div><div class="prop-val">Primary language of content</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Onboarding email 1</div><div class="prop-val">Welcome email sent</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Onboarding email 2</div><div class="prop-val">IP rights + community guidelines sent (day 3)</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Onboarding email 3</div><div class="prop-val">7-day check-in sent</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Stories published</div><div class="prop-val">Number of stories live on SEEN</div><div class="prop-type">Number</div></div>
+    <div class="property-row"><div class="prop-name">CMF-eligible content</div><div class="prop-val">Content qualifies for CMF reporting</div><div class="prop-type">Checkbox</div></div>
+  </div>
+
+  <div class="notion-card">
+    <h3>4. Grant tracker</h3>
+    <div class="property-row"><div class="prop-name">Grant name</div><div class="prop-val">CMF Convergent · IRAP · BDC BESP · Ontario Creates</div><div class="prop-type">Title</div></div>
+    <div class="property-row"><div class="prop-name">Amount potential</div><div class="prop-val">Funding range</div><div class="prop-type">Text</div></div>
+    <div class="property-row"><div class="prop-name">Deadline</div><div class="prop-val">Application due date</div><div class="prop-type">Date</div></div>
+    <div class="property-row"><div class="prop-name">Status</div><div class="prop-val">Research → Documents gathering → Draft in progress → Review → Submitted → Decision pending → Approved · Rejected</div><div class="prop-type">Select</div></div>
+    <div class="property-row"><div class="prop-name">Eligibility confirmed</div><div class="prop-val">You've verified you qualify</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Lawyer needed</div><div class="prop-val">Requires legal review before submission</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Accountant needed</div><div class="prop-val">Requires CPA sign-off</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Sections</div><div class="prop-val">Link to sub-pages: one page per application section with Claude draft + your edits</div><div class="prop-type">Relation</div></div>
+    <div class="property-row"><div class="prop-name">Notes</div><div class="prop-val">Key requirements, Claude-generated prep notes</div><div class="prop-type">Text</div></div>
+  </div>
+
+  <div class="notion-card">
+    <h3>5. Capacity monitor</h3>
+    <div class="property-row"><div class="prop-name">Week of</div><div class="prop-val">Monday date of that week</div><div class="prop-type">Date</div></div>
+    <div class="property-row"><div class="prop-name">Active shoots</div><div class="prop-val">Number of shoot days this week</div><div class="prop-type">Number</div></div>
+    <div class="property-row"><div class="prop-name">Editing hours</div><div class="prop-val">Estimated editing load this week</div><div class="prop-type">Number</div></div>
+    <div class="property-row"><div class="prop-name">Social clients active</div><div class="prop-val">Retainer clients in active posting week</div><div class="prop-type">Number</div></div>
+    <div class="property-row"><div class="prop-name">SEEN dev hours</div><div class="prop-val">Planned Cursor/dev time</div><div class="prop-type">Number</div></div>
+    <div class="property-row"><div class="prop-name">Overbooked</div><div class="prop-val">Auto-flagged by Claude if total load exceeds threshold</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Contractor needed</div><div class="prop-val">Flag if a freelance photographer/editor is needed</div><div class="prop-type">Checkbox</div></div>
+    <div class="property-row"><div class="prop-name">Revenue this week</div><div class="prop-val">Invoiced amount</div><div class="prop-type">Number ($)</div></div>
+  </div>
+</div>
+
+<!-- MASTER PROMPTS -->
+<div class="panel" id="panel-prompts">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(200,255,87,.08)">📋</div>
+    <div><div class="section-title">Master prompt bank</div><div class="section-sub">Every prompt in one place — copy and use directly</div></div>
+  </div>
+
+  <div class="rules-block">
+    <div class="rules-header">
+      <div class="rules-title">CREOVA master system prompt — paste at the start of every Claude session</div>
+      <button class="copy-btn" onclick="copyBlock('master-system', this)">Copy</button>
+    </div>
+    <div class="rules-body">
+      <div class="rules-code" id="master-system">You are working with Justin Mafie, founder of CREOVA Media (creova.one).
+
+ABOUT CREOVA:
+- Black-owned creative agency + platform company, Ontario, Canada
+- Founded April 2025. Revenue generating. Solo founder.
+- Three business lines:
+  1. Creative Agency: photography, videography, branding, social media management
+  2. SEEN: audio-first streaming platform for underrepresented Canadian creators (MVP complete)
+  3. CREOVA Fashion: culturally-rooted lifestyle clothing brand
+- Music distribution: CREOVA Music (live on Spotify, Apple Music, all DSPs)
+
+BRAND VOICE:
+- Culturally grounded, empowering, peer-to-peer
+- Authentic BIPOC + East African (Tanzanian) perspective
+- Warm but professional. Never corporate. Never generic.
+- Storytelling first, business second.
+
+KEY CONTEXT:
+- Primary market: BIPOC entrepreneurs, student orgs (Brock, McMaster, Guelph, U of T),
+  event organizers, small businesses in Halton/Hamilton/GTHA
+- CMF grant application due June 2026 — highest priority business milestone
+- Revenue target 2026: $50,000+ agency + SEEN soft launch
+- Instagram: @creativeinnovation__ | Website: creova.one
+
+TOOLS JUSTIN USES:
+Wave (invoicing), Notion (project management), Calendly (bookings),
+Later (social scheduling), Mailchimp (email), Shopify (fashion),
+Adobe Creative Cloud, Canva Pro, Google Workspace, Figma
+
+Always: be specific, produce ready-to-use outputs, flag anything that needs
+Justin's personal decision or a professional (lawyer/accountant) before acting.</div>
+    </div>
+  </div>
+
+  <div id="all-prompts-container" style="margin-top:16px"></div>
+</div>
+
+</main>
+</div>
+
+<script>
+const PROMPTS = {
+  agency: [
+    {
+      num: "A-01", title: "Inquiry triage + proposal draft",
+      tool: "Claude + Calendly + Notion", freq: "Every inquiry — real time", saves: "45 min per inquiry", impact: "high",
+      prompt: `A new inquiry just came in. Here it is:
+[PASTE THE DM OR EMAIL HERE]
+
+Please do the following:
+1. Categorize the service needed: Photography-only / Videography-only / Photo+Video / Brand shoot / Social media management / Full content package
+2. Identify: event type, preferred date, location, approximate budget (if mentioned), how formal/casual the inquiry tone is
+3. Check my calendar — I'll tell you my available dates for that week
+4. Draft a warm, personal reply in my voice (@creativeinnovation__ brand voice: culturally warm, professional, peer-to-peer). Include:
+   - 2-line acknowledgement of their specific event/need
+   - My relevant rate range for their service type
+   - A link to my portfolio (creova.one)
+   - A Calendly booking link for a 15-min discovery call
+5. Create a Notion project brief I can copy when they book: client name, service, date, location, deliverables, timeline, deposit amount (50% of quoted rate)
+
+My available dates this week: [ADD YOUR AVAILABILITY]`,
+      prompt2: `Write 3 inquiry reply templates I can reuse — one for each of these client types:
+1. University student organization (events, galas, club coverage)
+2. BIPOC entrepreneur / small business (brand photography, social content)
+3. Corporate / NGO (professional event coverage, brand campaigns)
+
+Each template should: feel personal and warm (not copy-paste generic), mention CREOVA's cultural storytelling approach in one line, include a portfolio reference and Calendly link placeholder. Under 120 words each.`
+    },
+    {
+      num: "A-02", title: "Proposal → contract → deposit",
+      tool: "Claude + Wave + Google Docs", freq: "Every confirmed booking", saves: "2 hrs per booking", impact: "high",
+      prompt: `Client [NAME] has confirmed they want to book. Details:
+- Service: [photography / videography / brand shoot / social media / full package]
+- Event/shoot date: [DATE]
+- Location: [LOCATION]
+- Deliverables discussed: [WHAT YOU AGREED TO]
+- Quoted rate: $[AMOUNT] CAD
+
+Please produce:
+1. A full CREOVA proposal document with:
+   - CREOVA header (creova.one | @creativeinnovation__)
+   - Scope of work with exact deliverables
+   - Timeline (shoot date → editing → delivery within [X] business days)
+   - Investment breakdown
+   - Payment terms: 50% deposit to confirm, balance due on delivery date (Net-15)
+   - What client needs to provide (access, mood board, etc.)
+2. A contract summary paragraph I can paste into a simple e-sign agreement — covering: scope, IP (client owns final edited files, CREOVA retains right to use in portfolio), cancellation (deposit non-refundable within 7 days of shoot), liability limitation
+3. The deposit request email: warm, professional, with e-transfer email [YOUR EMAIL] and the exact deposit amount
+
+Brand voice: professional but warm. Not corporate. This feels like working with a creative partner, not an agency.`,
+      prompt2: `Create proposal templates for my 5 most common packages:
+1. Event photography — half day ($300–500)
+2. Event photography — full day ($600–900)
+3. Brand photography session ($400–800)
+4. Social media management — Starter ($500/mo, 8 posts)
+5. Full content creation package ($1,500–4,000)
+
+Each template needs: scope, deliverables, timeline, and rate range. Format as sections I can drop into a Google Doc.`
+    },
+    {
+      num: "A-03", title: "Post-delivery follow-up + review ask",
+      tool: "Claude + Gmail", freq: "48h after every project delivery", saves: "20 min per project", impact: "med",
+      prompt: `I just delivered a project. Details:
+- Client: [NAME] — [Instagram handle if known]
+- Service delivered: [WHAT YOU SHOT/DESIGNED]
+- Delivered via: [Google Drive link / WeTransfer]
+
+Write a 48-hour follow-up email that:
+1. Confirms delivery and expresses genuine excitement about the project (1–2 lines, specific to what the project was)
+2. Asks for feedback on 3 things: overall quality, editing style, communication process
+3. Softly asks them to tag @creativeinnovation__ in any social posts they make with the content
+4. Mentions the referral offer: "If you refer someone who books with CREOVA, you get 10% off your next project — just have them mention your name"
+5. Leaves the door open for their next project with one natural upsell mention
+
+Tone: warm and personal, like a message from Justin himself — not a template. Under 150 words. Write the subject line too (3 options).`,
+      prompt2: `Write follow-up message variations for 3 relationship types:
+1. Student organization (casual, peer-level, they might post the content themselves)
+2. BIPOC business client (warm professional, they care about authentic representation)
+3. Corporate or NGO client (professional, they may need formal thank-you correspondence)
+Keep each under 120 words. Include subject lines.`
+    },
+    {
+      num: "A-04", title: "Invoice chaser — Net-15 tracker",
+      tool: "Claude + Wave Invoicing export", freq: "Every Monday morning", saves: "1–1.5 hrs/week", impact: "high",
+      prompt: `Here are my outstanding invoices from Wave [PASTE CSV EXPORT OR LIST EACH INVOICE]:
+
+For each invoice, write a follow-up email using this scale:
+- 1–7 days overdue: Friendly nudge. Reference the project by name. Assume it was an oversight. Include the invoice number, amount, and a payment link or e-transfer instructions.
+- 8–14 days overdue: Firmer reminder. Reference the original due date and Net-15 terms. Restate the amount. Include next steps if no response within 5 business days.
+- 15–30 days overdue: Formal payment request. Reference the contract terms. State clearly that this is the final reminder before further action is considered.
+- 30+ days: Draft both an email AND a text message version. Tone: direct, professional, no aggression.
+
+My e-transfer email: [YOUR EMAIL]
+My Wave invoice link format: [YOUR WAVE LINK]
+
+Queue all drafts for my review — I'll approve before sending.`,
+      prompt2: `Draft 4 reusable invoice follow-up templates I can keep in Notion:
+1. 3-day friendly nudge
+2. 7-day reminder with payment link
+3. 14-day firm request referencing Net-15 terms
+4. 30-day final notice
+
+All in CREOVA's voice — professional, direct, not aggressive. Include subject lines.`
+    }
+  ],
+  content: [
+    {
+      num: "C-01", title: "Weekly content calendar builder",
+      tool: "Claude + Notion + Later", freq: "Every Friday for next week", saves: "3 hrs/week", impact: "high",
+      prompt: `Build my content calendar for next week. Here's what I'm working with:
+
+Assets available from this week's shoots: [LIST PHOTOS/VIDEOS — e.g. "3 portraits from Tuesday's brand shoot for X client", "BTS video from Y event", "new fashion piece arrived"]
+
+Campaign focus this week: [SEASONAL THEME / SERVICE PUSH / SEEN UPDATE / FASHION DROP]
+
+My channel schedule:
+- Instagram: 3 posts + 5 stories/day
+- TikTok: 2 videos
+- LinkedIn: 2 posts
+
+Please produce:
+1. A week-by-week posting schedule (Mon–Fri) with which asset goes where and recommended time of day
+2. For each post: concept (1 line), which content pillar it hits (client work / BTS / founder story / cultural hook / SEEN / fashion), and the asset it uses
+3. Flag any days where I need to create content from scratch (no existing asset)
+4. One TikTok concept that doesn't require new footage — can be a talking-head or screen-record format
+
+Make it feel like a CREOVA content calendar — authentic, cultural, never generic.`,
+      prompt2: `Give me a rolling 4-week content pillar rotation I can use as the base structure for my Instagram all year. My 6 pillars are:
+1. Client work showcase (proof + social proof)
+2. Behind-the-scenes (humanize the brand)
+3. Founder story (Justin's journey, cultural perspective)
+4. Cultural commentary (BIPOC creative economy, diaspora life in Canada)
+5. SEEN platform updates (building in public)
+6. CREOVA Fashion (drops, culture, styling)
+
+Map out which pillar hits on which day of the week, and suggest 3 content formats per pillar.`
+    },
+    {
+      num: "C-02", title: "Caption + hashtag batch generator",
+      tool: "Claude + Later/Buffer", freq: "After every shoot or content session", saves: "30 min per post session", impact: "high",
+      prompt: `I just completed: [DESCRIBE THE SHOOT/EVENT — e.g. "brand photography session for a BIPOC-owned restaurant in Hamilton, portrait-focused, natural light, warm tones"]
+
+Generate 5 caption options for Instagram:
+1. Storytelling (2–3 sentences, narrative, who the client is and why their story matters)
+2. Punchy one-liner (under 10 words, high share potential)
+3. Question to audience (drives comments, culturally specific to BIPOC/creative community)
+4. Cultural hook (roots this shoot in a larger cultural moment or conversation)
+5. Founder perspective (Justin's voice — what this shoot meant, why this client matters to CREOVA)
+
+For each caption, also generate:
+- 20 hashtags broken into: 5 niche BIPOC/cultural community, 5 Ontario/Canada location, 5 photography/creative industry, 5 community-building + storytelling
+- Best posting time recommendation
+
+Flag your top 2 captions: one for reach, one for engagement.`,
+      prompt2: `Build me a CREOVA hashtag bank organized by content type. 30 hashtags per category, no repeats:
+1. Event photography + videography
+2. Brand shoots + business photography  
+3. BIPOC entrepreneurship + Canadian business
+4. SEEN platform + audio storytelling
+5. CREOVA Fashion + cultural style
+6. Founder / building-in-public content
+
+Format each group so I can copy-paste directly into Later.`
+    },
+    {
+      num: "C-03", title: "Monthly newsletter auto-draft",
+      tool: "Claude + Mailchimp", freq: "Last week of each month", saves: "2 hrs/month", impact: "med",
+      prompt: `Draft my monthly CREOVA newsletter for [MONTH].
+
+Content to include:
+1. CLIENT SPOTLIGHT: [Describe a project you're proud of this month — client type, what you created, why it mattered]
+2. SEEN UPDATE: [Where SEEN is at — MVP, creator count, what's new, upcoming launch milestone]
+3. FOUNDER TIP: One piece of advice for BIPOC entrepreneurs about content, branding, or storytelling — something specific to our community's experience, not generic marketing advice
+4. SERVICE PROMOTION: [Current seasonal offer — e.g. grad season packages, holiday sessions, winter brand shoots]
+5. CTA: Book a discovery call via Calendly
+
+Format:
+- Subject line: 3 options, optimized for open rate. First must include a cultural reference or BIPOC-specific hook.
+- Preview text: 1 line, 80 chars max
+- Newsletter body: under 400 words total, conversational and warm
+- Tone: Justin talking to his community — not a brand newsletter. Like a letter from a founder.
+
+My Calendly link: [YOUR LINK]`,
+      prompt2: `Write a 6-month newsletter editorial calendar for CREOVA covering these milestones:
+- January: New year, new brand sessions
+- February: Black History Month — CREOVA story and community spotlight
+- March: SEEN platform building-in-public update
+- April/May: Grad season photography push
+- June: CMF application submission announcement + SEEN soft launch
+- July: Summer events season
+
+For each month: 1 subject line, 3-line editorial direction, key CTA.`
+    },
+    {
+      num: "C-04", title: "Performance debrief + next-week plan",
+      tool: "Claude + Instagram/TikTok/LinkedIn analytics", freq: "Every Sunday evening", saves: "1 hr/week", impact: "med",
+      prompt: `Here's my social media data for the past week:
+
+Instagram: [PASTE OR TYPE — followers gained, top post reach, top post saves, DM inquiries received, profile visits]
+TikTok: [views, follows gained, top video stats]
+LinkedIn: [impressions, comments, connection requests]
+
+Tell me:
+1. Which post format won this week (type of content, not just the number)
+2. Which platform is sending the most inquiry-intent signals (DMs, profile visits, link clicks)
+3. What content type I should do MORE of based on this data
+4. What I should stop doing or test less
+5. One specific recommendation for next week's content strategy based on these numbers
+
+Then: give me 3 specific post ideas for next week that build on what worked. Include the concept, format, and which pillar it hits.
+
+Context: my targets are 1,500 IG followers by Dec 2026, 40% inquiry conversion rate, and growing awareness for the SEEN platform launch.`,
+      prompt2: `Set up a simple weekly metrics tracking template I can paste into Notion every Sunday. Include fields for: Instagram (followers, top post reach, saves, DM inquiries, stories views average), TikTok (weekly views, follows, top video), LinkedIn (impressions, new connections, DMs), Calendly (discovery calls booked), Wave (revenue invoiced this week). Add a week-over-week trend indicator: up/flat/down.`
+    }
+  ],
+  seen: [
+    {
+      num: "S-01", title: "Creator onboarding sequence",
+      tool: "Claude + Gmail + Notion", freq: "Every new SEEN creator signup", saves: "1 hr per creator", impact: "high",
+      prompt: `A new creator just signed up for SEEN. Their details:
+- Name: [NAME]
+- Background / community: [E.G. "Black Canadian spoken word artist from Toronto", "Francophone newcomer from DRC making audio stories in French"]
+- Content type they plan to create: [AUDIO STORY / PODCAST / NARRATED ESSAY / ORIGINAL MUSIC]
+- How they found SEEN: [REFERRAL / INSTAGRAM / EVENT]
+
+Write their 3-email onboarding sequence:
+
+EMAIL 1 (send immediately — day 1):
+Subject: Welcome to SEEN, [NAME] — your voice belongs here
+Body: Personal welcome that acknowledges their specific community and background. Explain SEEN's core promise in 2 sentences (culturally safe, creator-owned, no algorithmic bias). Tell them exactly how to publish their first story — 3 simple steps. Keep under 200 words. Tone: warm, from a fellow creator, not a platform.
+
+EMAIL 2 (day 3):
+Subject: Your work, your rights — how SEEN protects creators
+Body: Explain creator IP ownership in plain language (no legalese). Cover: what SEEN's license means (streaming only, creator retains all rights), how to remove content if they ever want to, how revenue splits work. CMF compliance note: we track your content metrics for grant reporting — here's what that means and what we do with the data. Under 180 words.
+
+EMAIL 3 (day 7):
+Subject: One week in — how's it going?
+Body: Check-in from Justin personally. Offer a 30-min onboarding call (Calendly link). Share 2 creators already on SEEN they should know about (from their similar community). Ask one question: "What would make SEEN feel like home for you?" Under 120 words.`,
+      prompt2: `Draft a one-page SEEN creator pitch I can DM or email to:
+1. A university cultural club (Black Students Association, African Students Association, etc.)
+2. An independent BIPOC artist or musician
+3. A community radio host or podcaster
+
+Each pitch: under 200 words. Explains what SEEN is, why it's different from Spotify/Audible, what creators get, and how to join. Include a CTA link placeholder. Tone: peer-to-peer, culturally specific, not sales-y.`
+    },
+    {
+      num: "S-02", title: "CMF grant application assistant",
+      tool: "Claude + Google Docs", freq: "Weekly sprint — June 2026 deadline", saves: "20+ hrs on application", impact: "high",
+      prompt: `I'm applying to the Canada Media Fund Convergent Stream for SEEN.
+
+SEEN context:
+- Audio-first storytelling platform for equity-deserving Canadian creators
+- Creator communities: Black Canadian, Indigenous, francophone, newcomer storytellers
+- MVP complete (Figma prototype). Tech stack: Next.js, TypeScript, PostgreSQL, Prisma.
+- Unique features: creator IP ownership model, culturally-sensitive moderation, CMF-compliant content metrics from day one, no algorithmic ranking of equity creator content
+- No equivalent platform exists in Canada's public media ecosystem
+- Founder: Justin Mafie, Black East African-Canadian, Brock University — lived experience drives the product
+
+Section I need drafted today: [PASTE THE SECTION NAME AND ANY REQUIREMENTS FROM THE CMF GUIDELINES]
+
+CMF evaluation criteria for this section: [PASTE THE CRITERIA]
+
+Please:
+1. Draft this section in formal grant language — match the register of CMF applications
+2. Hit every evaluation criterion explicitly (quote and address each one)
+3. Lead with SEEN's competitive differentiation — no equivalent Canadian platform, equity-first architecture, CMF-native data model
+4. Keep under [WORD LIMIT] words
+5. Flag any claim that needs supporting data I should gather before submission (audience research, market size, comparable platform data)
+
+My strongest differentiators: creator IP ownership, BIPOC-centred moderation, CMF-compliant content tracking built into the data model, and Justin's lived experience as a Black East African founder in Canada.`,
+      prompt2: `Build a CMF Convergent Stream application tracker for Notion. I need:
+- A page for each required section with: section name, word limit, evaluation criteria (from CMF guidelines), Claude draft status (not started / draft done / revised / final), and a sub-page for the actual draft
+- A master checklist of all documents required beyond the written sections (financial statements, incorporation docs, proof of Canadian content, letters of support, etc.)
+- A countdown view showing days until June 2026 deadline and which sections are still outstanding
+- A notes column for: what lawyer needs to review, what accountant needs to sign off on, what data I still need to gather`
+    },
+    {
+      num: "S-03", title: "SEEN weekly metrics digest",
+      tool: "Claude + platform analytics export", freq: "Every Monday", saves: "1 hr/week", impact: "med",
+      prompt: `Here is SEEN's platform data for this week:
+[PASTE: registered creators total, new creators this week, stories/content published, active listeners, average session duration, plays per story (top 5), geographic breakdown if available, subscription count if live]
+
+Produce a weekly digest with:
+1. Top-line summary (3 numbers that matter most this week)
+2. What grew vs last week and what didn't
+3. Best-performing content type and community this week
+4. Creator acquisition: which channel is bringing the most new creators
+5. One recommendation: what should I do differently this week to improve next week's numbers
+
+Then reformat this as a one-page investor-ready summary I can share with:
+- CMF reviewers (emphasizing: equity-deserving creator count, content diversity, Canadian content percentage)
+- Pre-seed angels (emphasizing: growth rate, retention, total creator-hours published)
+
+Keep both versions under 300 words each. I want to be able to drop either one into a deck without editing.`,
+      prompt2: `Build me a SEEN KPI framework that organizes my metrics into three buckets:
+1. CMF compliance metrics (what the Canada Media Fund cares about for grant reporting)
+2. Subscription growth metrics (what matters for revenue and business health)
+3. Pre-seed pitch metrics (what angel investors and cultural VCs want to see)
+
+For each metric: what it measures, why it matters for that audience, and how to calculate it from my platform data. Format as a Notion database schema I can build and populate weekly.`
+    }
+  ],
+  fashion: [
+    {
+      num: "F-01", title: "Drop launch campaign builder",
+      tool: "Claude + Shopify + Canva + Later", freq: "Each CREOVA Fashion drop", saves: "4 hrs per launch", impact: "high",
+      prompt: `I'm launching a new CREOVA Fashion drop. Details:
+- Collection name: [NAME]
+- Theme / cultural story: [WHAT THIS COLLECTION IS ABOUT]
+- Number of pieces: [X] styles
+- Price range: $[X]–$[X] CAD
+- Drop date: [DATE]
+- Limited run? [YES/NO — how many units?]
+
+Build a full 3-week launch campaign:
+
+WEEK 1 — Teaser (before drop):
+- 3 Instagram teaser posts: concepts + captions (no full reveal, build anticipation)
+- 2 TikTok concepts: one showing design/manufacturing process, one cultural storytelling angle
+- VIP early access email (for your list — 24hr early access before public drop)
+- Story sequence: 5-story teaser arc for Instagram
+
+DROP DAY:
+- Instagram announcement post + caption
+- Instagram story sequence (reveal arc, 7 stories)
+- TikTok launch video concept (hook + reveal + CTA)
+- Email to full list: launch announcement with Shopify link
+- LinkedIn post: the cultural story behind this drop (founder perspective)
+
+WEEK AFTER DROP:
+- 1 social proof post using customer photos (caption template)
+- Restock/waitlist email if sold out
+- 1 "behind the collection" post — the why
+
+Write all copy. Flag which pieces need Canva design assets (I'll create those) vs just need a caption ready. Include Shopify link placeholder throughout.`,
+      prompt2: `Write product description copy for a CREOVA Fashion piece. Style:
+- Cultural storytelling first (the inspiration, the community, the meaning)
+- Material and fit details second (practical, not clinical)
+- Sizing note third (inclusive sizing message)
+- End with: what wearing this says about who you are
+
+Tone: editorial, not e-commerce. Like reading Vogue meets a founder's personal essay. Under 180 words per piece. Write a template I can adapt for any new piece.`
+    },
+    {
+      num: "F-02", title: "VIP early access message",
+      tool: "Claude + Email + WhatsApp", freq: "48h before each drop", saves: "30 min per drop", impact: "med",
+      prompt: `Write an early access message for my VIP list for the upcoming [COLLECTION NAME] drop.
+
+Drop details:
+- Theme: [CULTURAL THEME]
+- Drop date: [DATE] at [TIME]
+- VIP window: 24 hours before public (i.e. available to VIPs starting [DATE/TIME])
+- Expected to sell out? [YES/NO]
+- Key pieces: [1–2 hero items]
+- Shopify link: [LINK]
+
+Write 3 versions:
+1. WhatsApp broadcast message — under 100 words. Feels like Justin texting them personally. Warm, exclusive, specific. Include: what the collection means culturally (1 sentence), the VIP access window, the link, a note that sizes are limited.
+2. Instagram DM version — slightly longer, can include more cultural context. Under 150 words.
+3. Email version — subject line + preview text + body. Subject line: 3 options (one cultural hook, one urgency, one personal from Justin). Body: 120 words max.
+
+These are your most loyal customers. The tone should feel like a message from a friend who happens to run a brand they love.`,
+      prompt2: `Design a VIP tier system for CREOVA across all three business lines. Include:
+- Creative agency clients: what makes someone VIP, what they get (discounts, priority booking, etc.)
+- SEEN subscribers: what makes someone a power creator or top listener, what they unlock
+- Fashion customers: spend threshold or purchase history to qualify, what VIP means (early access, custom pieces, etc.)
+
+For each tier: name it (in CREOVA's brand voice), define the criteria, list 3–5 benefits, and write a 1-sentence description I can use in marketing copy.`
+    },
+    {
+      num: "F-03", title: "Customer support response drafts",
+      tool: "Claude + Shopify inbox", freq: "Daily batch — 10 min review", saves: "45 min/day at scale", impact: "med",
+      prompt: `Here are customer messages from my Shopify inbox this week:
+[PASTE 3–5 CUSTOMER MESSAGES]
+
+For each message:
+1. Identify the issue type: shipping question / sizing concern / return/exchange request / product damage / wholesale inquiry / collaboration ask / general compliment
+2. Draft a response that:
+   - Matches the tone of their message (if they're casual, respond casual; if formal, respond formally)
+   - Resolves their specific concern directly — no corporate runaround
+   - Adds one line that reinforces CREOVA Fashion's cultural mission (only where it feels natural — don't force it)
+   - Includes next steps clearly (what happens next, any links they need)
+3. Flag if this needs a human decision before responding: refund approval, pricing negotiation, custom order feasibility, any complaint that could escalate
+
+Do NOT send anything. Queue all for my review. I'll approve or edit before replying.`,
+      prompt2: `Write a CREOVA Fashion FAQ response library — 8 scenarios I can save as Shopify Quick Replies:
+1. Shipping timeline question (Canada domestic)
+2. Sizing / fit concern (inclusive sizing messaging)
+3. Return policy question (store credit model)
+4. Custom order inquiry (how to handle, what's possible)
+5. Wholesale / stockist request
+6. Creator collaboration pitch
+7. Positive review / fan message (warm acknowledgement)
+8. Damaged item complaint (resolution path)
+
+Each response: under 100 words, in CREOVA's brand voice, with [PLACEHOLDER] brackets where I need to fill in specifics.`
+    }
+  ],
+  finance: [
+    {
+      num: "FN-01", title: "Monthly financial close + P&L",
+      tool: "Claude + Wave export + Google Sheets", freq: "1st of each month", saves: "3 hrs/month", impact: "high",
+      prompt: `Here are my Wave transactions and invoices for [MONTH] [ATTACH OR PASTE CSV EXPORT]:
+
+Run my monthly close:
+1. Total revenue by stream:
+   - Event photography/videography
+   - Brand photography + design
+   - Social media management retainers
+   - Other (specify)
+   Total: $X
+2. Total expenses by category:
+   - Software subscriptions (Adobe, Canva, Notion, Later, Mailchimp, Shopify, Calendly, etc.)
+   - Equipment (rentals, accessories, purchases)
+   - Marketing (boosted posts, materials, transport)
+   - Professional fees (lawyer, accountant, insurance)
+   - Other
+   Total: $X
+3. Net income this month: $X
+4. Outstanding invoices still unpaid: list each with days overdue
+5. Plain-English P&L summary (4 sentences max — where money came from, where it went, net result, one thing to note)
+6. Revenue vs my 2026 monthly target of $[X] — am I on pace?
+
+Flag: any expense with no category, any invoice 30+ days overdue, and any unusual transaction I should review.
+
+Then format everything as a clean one-page accountant packet I can attach to an email.`,
+      prompt2: `Build me a simple CREOVA revenue tracker template for Notion or Google Sheets that shows:
+- Monthly targets vs actuals for each revenue stream (agency, SEEN subscriptions, fashion)
+- Running 2026 total vs $50,000 annual target
+- Month-over-month growth percentage
+- A traffic-light flag (green/yellow/red) for whether I'm on pace for the year
+
+I want to update this in 10 minutes each month after my financial close.`
+    },
+    {
+      num: "FN-02", title: "Grant deadline + compliance tracker",
+      tool: "Claude + Notion + Google Calendar", freq: "Weekly review", saves: "Prevents missed deadlines", impact: "high",
+      prompt: `I'm targeting these grants in 2026:
+1. Canada Media Fund — Convergent Stream: application target June 2026
+2. NRC IRAP: apply after CREOVA Inc is incorporated (target Q2 2026)
+3. BDC Black Entrepreneur Program (BESP): up to $75,000
+4. Ontario Creates: digital media and content funding
+
+For each grant, give me:
+a. A clear eligibility checklist — what I need to confirm or obtain before applying
+b. All documents required (what to gather, what needs a professional to produce)
+c. Key deadlines and milestone dates working backwards from the submission date
+d. What requires my lawyer's input (IP, contracts, corporate structure)
+e. What requires my accountant's input (financial statements, audited numbers, SR&ED, IRAP qualification)
+
+Then build me a 90-day countdown plan for the CMF Convergent Stream application starting today. Break it into weekly tasks: what to draft, what to research, what to gather, what professional to contact.
+
+Also write a 150-word CREOVA company profile I can reuse across all grant applications — covering: what CREOVA Media does, who we serve (BIPOC community), our traction to date (revenue generating, SEEN MVP complete, music on DSPs), and why we qualify as an equity-deserving company.`,
+      prompt2: `Draft the CREOVA company profile paragraph I can paste into every grant application:
+- What CREOVA Media is and does (1–2 sentences)
+- Who we serve — BIPOC community, cultural specificity (1 sentence)
+- Justin's background — Black East African-Canadian founder, Brock University (1 sentence)
+- Traction: revenue generating, SEEN MVP complete, CREOVA Music on all DSPs (1 sentence)
+- Why equity-deserving: cultural representation gap we're filling (1 sentence)
+Total: 150–200 words. Grant application register — formal but not stiff.`
+    },
+    {
+      num: "FN-03", title: "Capacity + workload monitor",
+      tool: "Claude + Notion + Calendly export", freq: "Every Monday morning", saves: "Prevents founder burnout", impact: "high",
+      prompt: `Here's my workload for the next 4 weeks:
+
+Active projects in Notion: [PASTE YOUR PROJECT LIST — client name, service type, status, deadline]
+Calendly bookings confirmed: [PASTE OR DESCRIBE — dates, client types, service types]
+Social media retainer clients active: [X clients — each requires ~Y hours/week]
+SEEN dev planned: [X hours this week]
+CMF application sessions: [X sessions scheduled]
+
+Please:
+1. Map out my week-by-week load for the next 4 weeks
+2. Flag any week where I have more than 3 shoot days — that's my overextension threshold
+3. Calculate estimated total weekly hours: shoots + editing + retainer delivery + admin + SEEN dev. If any week exceeds 50 hours, flag it red.
+4. Identify which current clients are close to converting to a monthly retainer (based on project count / type)
+5. Tell me which week I should hire a contractor if I want to protect quality: "You need a second shooter for [WEEK] — book by [DATE]"
+6. Recommend one thing to defer or renegotiate to keep this month sustainable
+
+I'm a solo founder. Overextension is a real risk. Be direct.`,
+      prompt2: `Help me build a CREOVA capacity model in Notion that auto-calculates my total weekly workload. I need:
+- Time estimates per service type: half-day shoot (X hrs), full-day shoot (X hrs), editing per shoot type, social media client per week (X hrs), SEEN dev session (X hrs), admin/comms (X hrs/day)
+- A formula that sums my active workload for any given week
+- A flag that turns red when I exceed 45 hours and suggests which type of contractor to bring in (photographer, editor, social media assistant)`
+    },
+    {
+      num: "FN-04", title: "Weekly outreach batch — 10 targets",
+      tool: "Claude + Instagram DMs + LinkedIn", freq: "Every Tuesday — 10 outreaches/week", saves: "2 hrs/week", impact: "high",
+      prompt: `Here are my 10 outreach targets for this week:
+[LIST THEM — e.g.:
+1. [Instagram handle] — BLSA Brock University (student org, likely planning an end-of-year gala)
+2. [Instagram handle] — BIPOC-owned hair salon in Hamilton (needs brand photography and social content)
+3. [Name + LinkedIn] — Event organizer for [cultural event] in Mississauga
+... etc.]
+
+For each target, draft a personalized DM that:
+1. References something specific about them or their recent posts/event (shows I actually looked)
+2. Introduces CREOVA in one sentence — specific to what they need, not a generic pitch
+3. Includes a low-friction CTA — either: "would love to cover your next event" or "I put together a quick package idea for organizations like yours — can I share it?" or "happy to jump on a 15-min call if you're thinking about content for [upcoming thing]"
+
+Keep each message under 80 words. Tone: peer-to-peer, culturally aware, from Justin personally — not from a brand account. These should feel like a message from someone in their community who happens to run a creative agency, not a sales pitch.
+
+Format: numbered list, platform noted (Instagram DM vs LinkedIn message).`,
+      prompt2: `Build me a CREOVA outreach target list I can use to fill my weekly 10-outreach quota. I need:
+- 20 student organization names + Instagram handles at Ontario universities (Brock, McMaster, Guelph, U of T, York, Ryerson/TMU, Western) — prioritize BIPOC cultural clubs
+- 15 BIPOC business associations + community orgs in the GTHA that might need creative services
+- 10 cultural event organizers (galas, festivals, community events) active in Southern Ontario
+
+For each: name, Instagram or LinkedIn handle, why they're a fit for CREOVA, and which service type to lead with in outreach.`
+    }
+  ]
+};
+
+function renderPrompts(containerId, prompts) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = prompts.map((p, i) => `
+    <div class="prompt-card">
+      <div class="pc-header" onclick="toggleCard(this)">
+        <div>
+          <div class="pc-num">${p.num}</div>
+          <div class="pc-title">${p.title}</div>
+          <div class="pc-meta">${p.tool}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="impact-pill ${p.impact==='high'?'badge-green':'badge-gold'}">${p.impact==='high'?'High impact':'Medium impact'}</span>
+          <div class="pc-toggle">+</div>
+        </div>
+      </div>
+      <div class="pc-body">
+        <div class="prompt-block">
+          <div class="prompt-label">Primary prompt</div>
+          <button class="copy-btn" onclick="copyText(this.nextElementSibling.textContent, this)">Copy</button>
+          <div class="prompt-text">${p.prompt}</div>
+        </div>
+        <div class="pc-info-row">
+          <span class="pc-info-item"><strong>Frequency:</strong> ${p.freq}</span>
+          <span class="pc-info-item"><strong>Time saved:</strong> ${p.saves}</span>
+        </div>
+        ${p.prompt2 ? `<div class="prompt-block" style="margin-top:12px">
+          <div class="prompt-label">Bonus prompt</div>
+          <button class="copy-btn" onclick="copyText(this.nextElementSibling.textContent, this)">Copy</button>
+          <div class="prompt-text">${p.prompt2}</div>
+        </div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAllPrompts() {
+  const all = [...PROMPTS.agency, ...PROMPTS.content, ...PROMPTS.seen, ...PROMPTS.fashion, ...PROMPTS.finance];
+  renderPrompts('all-prompts-container', all);
+}
+
+function toggleCard(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.pc-toggle');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  toggle.classList.toggle('open', !isOpen);
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+function copyBlock(id, btn) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  copyText(el.textContent, btn);
+}
+
+function nav(section) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const panel = document.getElementById('panel-' + section);
+  if(panel) panel.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if(n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+section+"'")) n.classList.add('active');
+  });
+  window.scrollTo(0,0);
+}
+
+renderPrompts('agency-prompts', PROMPTS.agency);
+renderPrompts('content-prompts', PROMPTS.content);
+renderPrompts('seen-prompts', PROMPTS.seen);
+renderPrompts('fashion-prompts', PROMPTS.fashion);
+renderPrompts('finance-prompts', PROMPTS.finance);
+renderAllPrompts();
+</script>
+</body>
+</html>
+HTMLEOF
