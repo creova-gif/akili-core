@@ -9,7 +9,7 @@ import logging
 import os
 from datetime import datetime
 from aiohttp import web
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 log = logging.getLogger("AKILI.API")
 
@@ -81,8 +81,8 @@ async def handle_api_command(request: web.Request) -> web.Response:
     log.info(f"[API] Command → {agent}: {command[:60]}")
 
     try:
-        client = Anthropic(api_key=ANTHROPIC_KEY)
-        response = client.messages.create(
+        client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
+        response = await client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=1000,
             system=system,

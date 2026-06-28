@@ -12,6 +12,7 @@
 import os
 import json
 import logging
+import aiofiles
 from datetime import datetime, timedelta
 from config.accounts import SNAPCHAT_ACCOUNT
 
@@ -147,21 +148,22 @@ class SnapchatClient:
 
     # ── Streak Tracking ───────────────────────────────────────
 
-    def load_streak(self) -> dict:
+    async def load_streak(self) -> dict:
         if os.path.exists(STREAK_FILE):
             try:
-                with open(STREAK_FILE) as f:
-                    return json.load(f)
+                async with aiofiles.open(STREAK_FILE) as f:
+                    content = await f.read()
+                    return json.loads(content)
             except Exception:
                 pass
         return {"streak": 0, "last_posted": None, "total_days": 0, "spotlight_this_week": 0}
 
-    def save_streak(self, data: dict):
-        with open(STREAK_FILE, "w") as f:
-            json.dump(data, f, indent=2)
+    async def save_streak(self, data: dict):
+        async with aiofiles.open(STREAK_FILE, "w") as f:
+            await f.write(json.dumps(data, indent=2))
 
-    def mark_posted(self, include_spotlight: bool = False) -> str:
-        data = self.load_streak()
+    async def mark_posted(self, include_spotlight: bool = False) -> str:
+        data = await self.load_streak()
         today = datetime.now().strftime("%Y-%m-%d")
         last = data.get("last_posted")
 
@@ -181,7 +183,7 @@ class SnapchatClient:
         if include_spotlight:
             data["spotlight_this_week"] = data.get("spotlight_this_week", 0) + 1
 
-        self.save_streak(data)
+        await self.save_streak(data)
         needed = CREATOR_TARGETS["daily_posting_streak"]
         remaining = max(0, needed - data["streak"])
         msg = f"✅ Day marked! Streak: {data['streak']} days"
@@ -191,8 +193,8 @@ class SnapchatClient:
             msg += " — Creator program target reached! 🎉"
         return msg
 
-    def get_streak_status(self) -> str:
-        data = self.load_streak()
+    async def get_streak_status(self) -> str:
+        data = await self.load_streak()
         streak = data.get("streak", 0)
         last = data.get("last_posted", "never")
         total = data.get("total_days", 0)
@@ -240,7 +242,7 @@ class SnapchatClient:
         pillar_key = DAY_PILLAR.get(day, "personal")
         pillar = CONTENT_PILLARS[pillar_key]
         is_spotlight_day = day in ["tuesday", "thursday", "saturday"]
-        streak = self.load_streak()
+        streak = await self.load_streak()
 
         return {
             "date":        datetime.now().strftime("%Y-%m-%d"),
@@ -444,7 +446,7 @@ class SnapchatClient:
     # ── Status ────────────────────────────────────────────────
 
     async def format_status(self) -> str:
-        streak = self.load_streak()
+        streak = await self.load_streak()
         return (
             f"👻 SNAPCHAT STATUS\n"
             f"  ✅ @{self.handle} — strategy engine active\n"

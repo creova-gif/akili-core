@@ -4,7 +4,7 @@
 # ============================================================
 
 import logging
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 log = logging.getLogger("REACH")
 
@@ -90,20 +90,24 @@ MARKETING RULES:
 
 class ReachAgent:
     def __init__(self, api_key: str, memory):
-        self.client = Anthropic(api_key=api_key)
+        self.client = AsyncAnthropic(api_key=api_key)
         self.memory = memory
         log.info("REACH agent initialized")
 
     async def handle(self, command: str) -> str:
         """Process a comms command from Justin."""
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1500,
-            system=REACH_PROMPT,
-            messages=[{"role": "user", "content": command}]
-        )
-        result = response.content[0].text
-        self.memory.daily_log(f"[REACH] Command: {command[:60]}")
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1500,
+                system=REACH_PROMPT,
+                messages=[{"role": "user", "content": command}]
+            )
+            result = response.content[0].text
+        except Exception as e:
+            log.error(f"[REACH] Error generating response: {e}")
+            result = f"⚠️ REACH encountered an error: {e}"
+        await self.memory.daily_log(f"[REACH] Command: {command[:60]}")
         return f"📨 REACH\n\n{result}"
 
     async def repurpose_content(self, original: str, source_platform: str) -> str:
@@ -123,13 +127,17 @@ Repurpose this into platform-specific versions for:
 Maintain Justin Mafie's authentic voice throughout.
 Cross-promote CREOVA brands appropriately in each version.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=2000,
-            system=REACH_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"♻️ REPURPOSED CONTENT\n\n{response.content[0].text}"
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=2000,
+                system=REACH_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"♻️ REPURPOSED CONTENT\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[REACH] Error repurposing content: {e}")
+            return f"⚠️ REACH Error: {e}"
 
     async def draft_email_campaign(self, campaign_type: str, details: str) -> str:
         """Draft an email campaign."""
@@ -146,13 +154,17 @@ Include:
 
 Link to creova.one where relevant.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1500,
-            system=REACH_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"📧 EMAIL CAMPAIGN\n\n{response.content[0].text}"
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1500,
+                system=REACH_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"📧 EMAIL CAMPAIGN\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[REACH] Error drafting email campaign: {e}")
+            return f"⚠️ REACH Error: {e}"
 
     async def auto_reply_dm(self, message: str, platform: str, sender_type: str = "unknown") -> str:
         """Generate an auto-reply for a DM."""
@@ -165,10 +177,14 @@ Write a reply in Justin Mafie's voice.
 If this seems urgent or high-value, flag it clearly at the top.
 Keep it genuine — never robotic.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=500,
-            system=REACH_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.content[0].text
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=500,
+                system=REACH_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.content[0].text
+        except Exception as e:
+            log.error(f"[REACH] Error auto-replying to DM: {e}")
+            return f"⚠️ REACH Error: {e}"

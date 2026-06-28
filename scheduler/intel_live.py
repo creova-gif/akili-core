@@ -9,7 +9,7 @@ import logging
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 ET = ZoneInfo("America/Toronto")
 
@@ -32,7 +32,7 @@ class IntelLiveBrief:
     def __init__(self, telegram_app, memory):
         self.app    = telegram_app
         self.memory = memory
-        self.client = Anthropic(api_key=ANTHROPIC_KEY)
+        self.client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
         log.info("INTEL LiveBrief initialized — web search enabled")
 
     async def run(self):
@@ -42,7 +42,7 @@ class IntelLiveBrief:
                 log.info("[INTEL] Generating live morning brief (8:00 ET)...")
                 brief = await self.generate_live_brief()
                 await self.app.bot.send_message(chat_id=JUSTIN_CHAT_ID, text=brief)
-                self.memory.daily_log("[INTEL] Morning brief sent at 08:00 ET")
+                await self.memory.daily_log("[INTEL] Morning brief sent at 08:00 ET")
             await asyncio.sleep(60)
 
     async def generate_live_brief(self) -> str:
@@ -94,16 +94,20 @@ Under 400 words total. Actionable, not fluffy."""
 Date: {today}
 Include: 3 priorities (CREOVA + content), 1 GoPay VC pitch tip, 1 music action item.
 Format with ☀️ AKILI MORNING BRIEF header. Under 300 words. Real and actionable."""
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=600,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.content[0].text
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=600,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.content[0].text
+        except Exception as e:
+            log.error(f"[INTEL] Fallback brief error: {e}")
+            return f"⚠️ INTEL: Brief generation failed: {e}"
 
     async def _search_and_respond(self, prompt: str, fallback_fn=None) -> str:
         try:
-            response = self.client.messages.create(
+            response = await self.client.messages.create(
                 model="claude-sonnet-4-5",
                 max_tokens=1200,
                 tools=[{"type": "web_search_20250305", "name": "web_search"}],

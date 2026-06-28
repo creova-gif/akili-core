@@ -158,3 +158,23 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# ── Secrets & credentials (AKILI security pass — NEVER commit) ──
+.env
+.env.*
+!.env.example
+config/*credentials*.json
+config/*token*.json
+config/gmail_*.json
+attached_assets/client_secret*.json
+attached_assets/*Credentials*
+attached_assets/*credentials*
+
+# ── OS junk ──
+.DS_Store
+**/.DS_Store
+
+# ── Generated voice / media artifacts ──
+tmp/
+media_cache/
+*.oga

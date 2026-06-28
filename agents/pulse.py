@@ -7,7 +7,7 @@
 import logging
 import json
 from datetime import datetime
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 from skills.shared.telegram_formatter import formatter, DIVIDER
 from config.knowledge_loader import get_knowledge_for_agent
 from config.creova_services import get_service_context_for_agent, SERVICE_INJECTION_PROMPTS
@@ -85,7 +85,7 @@ TELEGRAM OUTPUT FORMAT:
 
 class PulseAgent:
     def __init__(self, api_key: str, memory):
-        self.client  = Anthropic(api_key=api_key)
+        self.client  = AsyncAnthropic(api_key=api_key)
         self.memory  = memory
         self.ab_data = {}
         log.info("PULSE agent initialized")
@@ -114,14 +114,18 @@ class PulseAgent:
         if "image" in lower or "visual" in lower:
             return await self.generate_image_brief(command)
 
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1500,
-            system=PULSE_PROMPT,
-            messages=[{"role": "user", "content": command}]
-        )
-        result = response.content[0].text
-        self.memory.daily_log(f"[PULSE] Command: {command[:60]}")
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1500,
+                system=PULSE_PROMPT,
+                messages=[{"role": "user", "content": command}]
+            )
+            result = response.content[0].text
+        except Exception as e:
+            log.error(f"[PULSE] Error generating response: {e}")
+            result = f"⚠️ PULSE encountered an error: {e}"
+        await self.memory.daily_log(f"[PULSE] Command: {command[:60]}")
         return f"📡 PULSE\n\n{result}"
 
     async def heartbeat_check(self):
@@ -129,7 +133,7 @@ class PulseAgent:
         now  = datetime.now()
         hour = now.hour
         day  = now.strftime("%A").lower()
-        self.memory.daily_log(f"[PULSE] Heartbeat — {day} {hour:02d}:00")
+        await self.memory.daily_log(f"[PULSE] Heartbeat — {day} {hour:02d}:00")
         return None
 
     async def generate_content_package(self, topic: str, day: str = None) -> str:
@@ -156,12 +160,16 @@ Generate a full cross-platform content package. Return as JSON:
 }}
 Only JSON.
 """
-        r = self.client.messages.create(
-            model="claude-sonnet-4-5", max_tokens=2000,
-            system=PULSE_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        raw = r.content[0].text.strip().replace("```json","").replace("```","").strip()
+        try:
+            r = await self.client.messages.create(
+                model="claude-sonnet-4-5", max_tokens=2000,
+                system=PULSE_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            raw = r.content[0].text.strip().replace("```json","").replace("```","").strip()
+        except Exception as e:
+            log.error(f"[PULSE] Error generating content package: {e}")
+            return f"⚠️ PULSE Error: {e}"
         try:
             data = json.loads(raw)
             return formatter.format("PULSE", "approval", {
@@ -197,14 +205,18 @@ Slide structure:
 
 Justin's voice. African futurism aesthetic. Educational but engaging.
 """
-        r = self.client.messages.create(
-            model="claude-sonnet-4-5", max_tokens=1500,
-            system=PULSE_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return await formatter.ai_enhance(
-            f"📱 CAROUSEL — {topic}\n\n{r.content[0].text}", "PULSE", "carousel"
-        )
+        try:
+            r = await self.client.messages.create(
+                model="claude-sonnet-4-5", max_tokens=1500,
+                system=PULSE_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return await formatter.ai_enhance(
+                f"📱 CAROUSEL — {topic}\n\n{r.content[0].text}", "PULSE", "carousel"
+            )
+        except Exception as e:
+            log.error(f"[PULSE] Error building carousel: {e}")
+            return f"⚠️ PULSE Error: {e}"
 
     # ── Image generation brief ────────────────────────────────
     async def generate_image_brief(self, request: str) -> str:
@@ -219,11 +231,15 @@ The image must:
 
 Return ONLY the DALL-E prompt (under 200 words).
 """
-        r = self.client.messages.create(
-            model="claude-sonnet-4-5", max_tokens=300,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        dalle_prompt = r.content[0].text.strip()
+        try:
+            r = await self.client.messages.create(
+                model="claude-sonnet-4-5", max_tokens=300,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            dalle_prompt = r.content[0].text.strip()
+        except Exception as e:
+            log.error(f"[PULSE] Error generating image brief: {e}")
+            return f"⚠️ PULSE Error: {e}"
 
         import os
         openai_key = os.environ.get("OPENAI_API_KEY", "")
@@ -291,14 +307,18 @@ Include:
 
 Be specific — real numbers, real metrics.
 """
-        r = self.client.messages.create(
-            model="claude-sonnet-4-5", max_tokens=800,
-            system=PULSE_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return await formatter.ai_enhance(
-            f"🧪 A/B EXPERIMENT — {platform.upper()}\n\n{r.content[0].text}", "PULSE"
-        )
+        try:
+            r = await self.client.messages.create(
+                model="claude-sonnet-4-5", max_tokens=800,
+                system=PULSE_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return await formatter.ai_enhance(
+                f"🧪 A/B EXPERIMENT — {platform.upper()}\n\n{r.content[0].text}", "PULSE"
+            )
+        except Exception as e:
+            log.error(f"[PULSE] Error running A/B experiment: {e}")
+            return f"⚠️ PULSE Error: {e}"
 
     # ── Weekly content calendar ───────────────────────────────
     async def generate_weekly_calendar(self) -> str:
@@ -307,9 +327,13 @@ Generate a complete 7-day social media content calendar for Justin Mafie and CRE
 For each day: theme, 1 Instagram concept, 1 Twitter angle, 1 LinkedIn angle, 1 TikTok concept, 1 Snapchat moment.
 Make each day distinct. Real specifics. Justin's authentic voice.
 """
-        r = self.client.messages.create(
-            model="claude-sonnet-4-5", max_tokens=2500,
-            system=PULSE_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return await formatter.ai_enhance(r.content[0].text, "PULSE", "weekly calendar")
+        try:
+            r = await self.client.messages.create(
+                model="claude-sonnet-4-5", max_tokens=2500,
+                system=PULSE_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return await formatter.ai_enhance(r.content[0].text, "PULSE", "weekly calendar")
+        except Exception as e:
+            log.error(f"[PULSE] Error generating weekly calendar: {e}")
+            return f"⚠️ PULSE Error: {e}"

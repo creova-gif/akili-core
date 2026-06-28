@@ -40,31 +40,10 @@ args = "python main.py"
 [workflows.workflow.metadata]
 outputType = "console"
 
-[userenv]
-
-[userenv.shared]
-TELEGRAM_TOKEN = "***REMOVED***"
-ANTHROPIC_API_KEY = "***REMOVED***"
-JUSTIN_CHAT_ID = "1720027121"
-GITHUB_TOKEN = "***REMOVED***"
-TWITTER_ACCESS_TOKEN = "***REMOVED***"
-TWITTER_ACCESS_TOKEN_SECRET = "***REMOVED***"
-TWITTER_BEARER_TOKEN = "***REMOVED***"
-TWITTER_API_KEY = "***REMOVED***"
-TWITTER_API_SECRET = "***REMOVED***"
-LINKEDIN_ACCESS_TOKEN = "***REMOVED***"
-LINKEDIN_COMPANY_URN = "urn:li:organization:107864228"
-SNAPCHAT_CLIENT_ID = "***REMOVED***"
-SNAPCHAT_CLIENT_SECRET = "***REMOVED***"
-SNAPCHAT_ACCESS_TOKEN = "***REMOVED***"
-TIKTOK_CLIENT_KEY = "***REMOVED***"
-TIKTOK_CLIENT_SECRET = "***REMOVED***"
-personal_gmail_address = "ayoubjustin2@gmail.com"
-business_gmail_account = "creativeinnovationspace@gmail.com"
-INSTAGRAM_APP_ID = "***REMOVED***"
-INSTAGRAM_APP_SECRET = "***REMOVED***"
-OPENAI_API_KEY = "***REMOVED***"
-RESEND_API_KEY = "***REMOVED***"
+# ⚠️ SECRETS REMOVED — never store API keys in .replit (it is committed to git).
+# Add every secret in the Replit "Secrets" tab (lock icon) instead. They are
+# injected into the environment securely and are NOT committed.
+# A local .env (git-ignored) mirrors them for off-Replit runs — see .env.example.
 
 [[ports]]
 localPort = 8080

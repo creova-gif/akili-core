@@ -5,7 +5,9 @@
 
 import logging
 from datetime import datetime
-from anthropic import Anthropic
+import aiohttp
+from bs4 import BeautifulSoup
+from anthropic import AsyncAnthropic
 
 log = logging.getLogger("INTEL")
 
@@ -98,20 +100,30 @@ RESEARCH DEPTH LEVELS:
 
 class IntelAgent:
     def __init__(self, api_key: str, memory):
-        self.client = Anthropic(api_key=api_key)
+        self.client = AsyncAnthropic(api_key=api_key)
         self.memory = memory
         log.info("INTEL agent initialized")
 
     async def handle(self, command: str) -> str:
         """Process a research command from Justin."""
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=2000,
-            system=INTEL_PROMPT,
-            messages=[{"role": "user", "content": command}]
-        )
-        result = response.content[0].text
-        self.memory.daily_log(f"[INTEL] Research: {command[:60]}")
+        try:
+            if "scrape" in command.lower() or "analyze http" in command.lower():
+                import re
+                urls = re.findall(r'(https?://\S+)', command)
+                if urls:
+                    return await self.analyze_webpage(urls[0], command)
+                    
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=2000,
+                system=INTEL_PROMPT,
+                messages=[{"role": "user", "content": command}]
+            )
+            result = response.content[0].text
+        except Exception as e:
+            log.error(f"[INTEL] Error generating response: {e}")
+            result = f"⚠️ INTEL encountered an error: {e}"
+        await self.memory.daily_log(f"[INTEL] Research: {command[:60]}")
         return f"🔍 INTEL\n\n{result}"
 
     async def daily_brief(self) -> str:
@@ -126,13 +138,17 @@ Include all sections from the DAILY BRIEF FORMAT.
 Be specific, actionable, and concise.
 Prioritize GoPay VC pitch progress and active product builds.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1500,
-            system=INTEL_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.content[0].text
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1500,
+                system=INTEL_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.content[0].text
+        except Exception as e:
+            log.error(f"[INTEL] Error generating daily brief: {e}")
+            return f"⚠️ INTEL Error: {e}"
 
     async def research_product(self, product: str, depth: str = "standard") -> str:
         """Deep research on a specific CREOVA product market."""
@@ -151,13 +167,17 @@ Include:
 
 Format as a clear report Justin can use for pitch decks.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=2500,
-            system=INTEL_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"📊 {product.upper()} RESEARCH\n\n{response.content[0].text}"
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=2500,
+                system=INTEL_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"📊 {product.upper()} RESEARCH\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[INTEL] Error researching product: {e}")
+            return f"⚠️ INTEL Error: {e}"
 
     async def generate_leads(self, venture: str, count: int = 10) -> str:
         """Generate leads for a specific CREOVA venture."""
@@ -173,13 +193,17 @@ For each lead provide:
 
 Format as a numbered list, actionable and specific.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=2000,
-            system=INTEL_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"🎯 LEADS — {venture}\n\n{response.content[0].text}"
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=2000,
+                system=INTEL_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"🎯 LEADS — {venture}\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[INTEL] Error generating leads: {e}")
+            return f"⚠️ INTEL Error: {e}"
 
     async def vc_tracker(self) -> str:
         """Track VC landscape for GoPay pitch."""
@@ -195,10 +219,106 @@ Include:
 
 Format as a tactical outreach plan.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=2000,
-            system=INTEL_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"💰 GOPAY VC TRACKER\n\n{response.content[0].text}"
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=2000,
+                system=INTEL_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"💰 GOPAY VC TRACKER\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[INTEL] Error generating VC tracker: {e}")
+            return f"⚠️ INTEL Error: {e}"
+
+    async def scrape_webpage(self, url: str) -> str:
+        """Native web scraper using aiohttp + BeautifulSoup4."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=15) as response:
+                    if response.status != 200:
+                        return f"Failed to fetch {url}: HTTP {response.status}"
+                    html = await response.text()
+                    soup = BeautifulSoup(html, "html.parser")
+                    text_blocks = [elem.get_text(strip=True) for elem in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'li'])]
+                    text_content = "\n".join(text_blocks)
+                    return text_content[:5000]
+        except Exception as e:
+            log.error(f"[INTEL] Scraping error for {url}: {e}")
+            return f"Error scraping {url}: {e}"
+
+    async def analyze_webpage(self, url: str, query: str = "") -> str:
+        """Scrape a webpage and analyze it using Claude."""
+        content = await self.scrape_webpage(url)
+        if content.startswith("Error") or content.startswith("Failed"):
+            return content
+            
+        prompt = f"""
+Analyze the following webpage content extracted from {url}.
+Query: {query if query else 'Provide a comprehensive summary and key takeaways.'}
+
+Webpage Content:
+{content}
+"""
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1500,
+                system=INTEL_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"🌐 WEBPAGE ANALYSIS — {url}\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[INTEL] Error analyzing webpage: {e}")
+            return f"⚠️ INTEL Error analyzing webpage: {e}"
+
+    async def research_to_reel(self, topic: str) -> str:
+        """Convert a research topic/snippet into a 15-second script + caption."""
+        prompt = f"""
+Turn the following research topic/finding into a 15-second script for Instagram Reels/TikTok.
+Topic: {topic}
+
+Requirements:
+- Hook (first 3 seconds)
+- Core insight
+- Call to action
+- Short engaging caption with hashtags
+Keep the tone pragmatic, educational, and engaging.
+"""
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1000,
+                system=INTEL_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"🎬 RESEARCH TO REEL\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[INTEL] Error generating reel: {e}")
+            return f"⚠️ INTEL Error: {e}"
+
+    async def generate_youtube_script(self, topic: str) -> str:
+        """Generate a 5-minute faceless YouTube script from research."""
+        prompt = f"""
+Write a 5-minute faceless YouTube script based on this research topic: {topic}
+
+Use the following exact structure:
+1. The Hook (0:00 - 0:45): Intriguing question, visual prompt (no faces), surprising stat.
+2. The Problem (0:45 - 2:00): Core issue, text overlays.
+3. The Data & Evidence (2:00 - 3:45): 2-3 key findings translated to human impact, animated charts visual prompt.
+4. The Solution (3:45 - 4:30): Actionable steps, b-roll of solutions.
+5. Call to Action (4:30 - 5:00): Direct viewers to the website and consulting link.
+
+Format clearly with Visuals and Audio separated for each section.
+"""
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=2500,
+                system=INTEL_PROMPT,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"🎥 YOUTUBE SCRIPT\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[INTEL] Error generating YouTube script: {e}")
+            return f"⚠️ INTEL Error: {e}"

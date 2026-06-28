@@ -10,7 +10,7 @@ import logging
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 ET = ZoneInfo("America/Toronto")   # EDT in summer, EST in winter — auto-adjusts
 
@@ -74,7 +74,7 @@ class PulseScheduler:
     def __init__(self, telegram_app, integrations=None):
         self.app          = telegram_app
         self.integrations = integrations
-        self.client       = Anthropic(api_key=ANTHROPIC_KEY)
+        self.client       = AsyncAnthropic(api_key=ANTHROPIC_KEY)
         self.pending      = {}
         log.info("PULSE Scheduler initialized")
 
@@ -116,14 +116,18 @@ Platform: {platform}. Rule: {PLATFORM_RULES.get(platform, '')}
 Write the post. Return ONLY valid JSON (no markdown):
 {{"caption": "post text ready to copy-paste", "hashtags": ["tag1", "tag2"], "notes": "image/video suggestion"}}"""
 
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=600,
-            system=BRAND_VOICE,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        text = response.content[0].text.strip().replace("```json", "").replace("```", "").strip()
-        return json.loads(text)
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=600,
+                system=BRAND_VOICE,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            text = response.content[0].text.strip().replace("```json", "").replace("```", "").strip()
+            return json.loads(text)
+        except Exception as e:
+            log.error(f"[PULSE Scheduler] AI generation error: {e}")
+            raise e
 
     async def _request_approval(self, approval_id: str, platform: str, content: dict, theme: str):
         caption  = content.get("caption", "")

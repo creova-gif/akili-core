@@ -8,25 +8,27 @@ import json
 import re
 import logging
 from datetime import datetime, date
+import aiofiles
 from aiohttp import web
 
 log = logging.getLogger("AKILI.Dashboard")
 
 # ── Data helpers ─────────────────────────────────────────────
 
-def _streak_data() -> dict:
+async def _streak_data() -> dict:
     try:
-        with open("akili-life/logs/snapchat_streak.json") as f:
-            return json.load(f)
+        async with aiofiles.open("akili-life/logs/snapchat_streak.json") as f:
+            content = await f.read()
+            return json.loads(content)
     except Exception:
         return {"streak": 0, "last_posted": "—", "total_days": 0}
 
 
-def _recent_activity(n: int = 20) -> list[dict]:
+async def _recent_activity(n: int = 20) -> list[dict]:
     entries = []
     try:
-        with open("logs/akili.log") as f:
-            for line in f:
+        async with aiofiles.open("logs/akili.log") as f:
+            async for line in f:
                 line = line.strip()
                 if not line:
                     continue
@@ -85,9 +87,9 @@ def _uptime() -> str:
 # ── API endpoint ─────────────────────────────────────────────
 
 async def handle_api_status(request: web.Request) -> web.Response:
-    streak       = _streak_data()
+    streak       = await _streak_data()
     integrations = _integration_status()
-    activity     = _recent_activity(20)
+    activity     = await _recent_activity(20)
     connected    = sum(1 for v in integrations.values() if v["ok"])
     payload = {
         "timestamp":              datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),

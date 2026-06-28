@@ -7,7 +7,7 @@
 import os
 import logging
 from datetime import datetime
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 log = logging.getLogger("AKILI.Formatter")
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -32,7 +32,7 @@ class TelegramFormatter:
     """
 
     def __init__(self):
-        self.client = Anthropic(api_key=ANTHROPIC_KEY) if ANTHROPIC_KEY else None
+        self.client = AsyncAnthropic(api_key=ANTHROPIC_KEY) if ANTHROPIC_KEY else None
 
     def format(self, agent: str, content_type: str, data: dict) -> str:
         header = AGENT_HEADERS.get(agent.upper(), f"⚡ <b>{agent}</b>")
@@ -288,12 +288,16 @@ Rules:
 
 Return ONLY the formatted text. No explanation."""
 
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1000,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.content[0].text.strip()
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.content[0].text.strip()
+        except Exception as e:
+            log.error(f"[Formatter] AI enhancement error: {e}")
+            return raw_text
 
 
 # Global formatter instance — import this in agents

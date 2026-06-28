@@ -14,7 +14,7 @@ import logging
 import aiohttp
 import asyncio
 from datetime import datetime
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 from skills.shared.telegram_formatter import formatter, DIVIDER
 
 log = logging.getLogger("INTEL.LeadEngine")
@@ -35,7 +35,7 @@ class IntelLeadEngine:
     def __init__(self, telegram_app, memory):
         self.app    = telegram_app
         self.memory = memory
-        self.client = Anthropic(api_key=ANTHROPIC_KEY)
+        self.client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
         configured  = [k for k, v in [
             ("Apollo", APOLLO_API_KEY), ("Hunter", HUNTER_API_KEY), ("OpenVC", OPENVC_API_KEY)
         ] if v]
@@ -147,20 +147,24 @@ class IntelLeadEngine:
         stage    = filters.get("stage", "seed pre-seed")
         location = filters.get("location", "Africa Canada")
 
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1200,
-            tools=[{"type": "web_search_20250305", "name": "web_search"}],
-            messages=[{"role": "user", "content":
-                f"Find 5 VCs actively investing in {focus} at {stage} stage in {location} in 2026. "
-                f"For each: fund name, managing partner, check size, notable portfolio companies, "
-                f"best pitch angle for a Black founder, contact/website."}]
-        )
-        result = ""
-        for block in response.content:
-            if hasattr(block, "text"):
-                result += block.text
-        return [{"source": "web_search", "data": result}]
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1200,
+                tools=[{"type": "web_search_20250305", "name": "web_search"}],
+                messages=[{"role": "user", "content":
+                    f"Find 5 VCs actively investing in {focus} at {stage} stage in {location} in 2026. "
+                    f"For each: fund name, managing partner, check size, notable portfolio companies, "
+                    f"best pitch angle for a Black founder, contact/website."}]
+            )
+            result = ""
+            for block in response.content:
+                if hasattr(block, "text"):
+                    result += block.text
+            return [{"source": "web_search", "data": result}]
+        except Exception as e:
+            log.error(f"[INTEL] VC web search error: {e}")
+            return []
 
     # ── Generate leads for CREOVA Solutions ──────────────────
     async def generate_creova_leads(self, service: str = "tech development",
@@ -214,7 +218,7 @@ class IntelLeadEngine:
                 f"     💡 Angle: {angle}"
             )
 
-        self.memory.daily_log(f"[INTEL] Generated {len(people)} leads — {service} / {market}")
+        await self.memory.daily_log(f"[INTEL] Generated {len(people)} leads — {service} / {market}")
 
         return formatter.format("INTEL", "research", {
             "query":        f"Lead gen: {service} in {market}",
@@ -227,21 +231,25 @@ class IntelLeadEngine:
 
     async def _ai_lead_gen(self, service: str, market: str) -> str:
         """Fallback lead gen using Anthropic web search when Apollo not configured."""
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1200,
-            tools=[{"type": "web_search_20250305", "name": "web_search"}],
-            messages=[{"role": "user", "content":
-                f"Find 5 specific companies or founders in {market} who would benefit from CREOVA's "
-                f"{service} services. Include: company name, founder/decision-maker name, "
-                f"why they need {service}, and how to contact them. Be specific with real companies."}]
-        )
-        result = ""
-        for block in response.content:
-            if hasattr(block, "text"):
-                result += block.text
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1200,
+                tools=[{"type": "web_search_20250305", "name": "web_search"}],
+                messages=[{"role": "user", "content":
+                    f"Find 5 specific companies or founders in {market} who would benefit from CREOVA's "
+                    f"{service} services. Include: company name, founder/decision-maker name, "
+                    f"why they need {service}, and how to contact them. Be specific with real companies."}]
+            )
+            result = ""
+            for block in response.content:
+                if hasattr(block, "text"):
+                    result += block.text
+        except Exception as e:
+            log.error(f"[INTEL] AI lead gen error: {e}")
+            result = "Lead generation failed due to API error."
 
-        self.memory.daily_log(f"[INTEL] Lead gen via web search — {service} / {market}")
+        await self.memory.daily_log(f"[INTEL] Lead gen via web search — {service} / {market}")
         return await formatter.ai_enhance(
             f"🎯 CREOVA LEADS — {service.upper()} | {market}\n\n{result}",
             "INTEL", f"lead generation {service}"
@@ -294,5 +302,5 @@ class IntelLeadEngine:
 
         lines.append(f"\n{DIVIDER}")
         lines.append(f"⚡ <code>leads tech East Africa</code> to find their portfolio companies as warm intros")
-        self.memory.daily_log(f"[INTEL] VC tracker ran for {product}")
+        await self.memory.daily_log(f"[INTEL] VC tracker ran for {product}")
         return "\n".join(lines)

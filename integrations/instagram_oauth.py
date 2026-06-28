@@ -17,6 +17,7 @@ import logging
 import secrets as secrets_mod
 import urllib.parse
 import aiohttp
+import aiofiles
 from aiohttp import web
 
 log = logging.getLogger("PULSE.InstagramOAuth")
@@ -234,8 +235,8 @@ async def handle_instagram_callback(request: web.Request) -> web.Response:
         "accounts":         accounts_found,
     }
     os.makedirs("config", exist_ok=True)
-    with open("config/instagram_token.json", "w") as f:
-        json.dump(token_obj, f, indent=2)
+    async with aiofiles.open("config/instagram_token.json", "w") as f:
+        await f.write(json.dumps(token_obj, indent=2))
 
     log.info(f"[Instagram OAuth] ✅ {fb_name} — {len(accounts_found)} IG accounts found")
 

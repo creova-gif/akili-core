@@ -1,12 +1,15 @@
 # ============================================================
 # AMPLIFY — Promotion & Brand Growth Agent
 # Music streams, brand experiments, Snapchat Creator
+# Strategy rebuilt around CREOVA's REAL earnings data:
+#   Audiomack + Apple Music + Boomplay (African/diaspora),
+#   audio-only promotion (no filming required).
 # ============================================================
 
 import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 ET = ZoneInfo("America/Toronto")
 
@@ -32,183 +35,216 @@ You are sending directly to Justin's phone. Format like this:
 AMPLIFY_PROMPT = """
 You are AMPLIFY, the promotion and brand growth agent for AKILI / CREOVA.
 
-YOUR MISSION:
-1. Maximize music streams (Spotify, Apple Music, TikTok, YouTube Music)
-2. Grow followers across all Justin Mafie and CREOVA accounts
-3. Drive traffic to www.creova.one
-4. Run posting time and content experiments
-5. Build toward Snapchat Creator program eligibility
-6. Cross-pollinate audiences between music, tech, and personal brand
+═══ THE GROUND TRUTH (read this first, every time) ═══
+Justin has 2+ released albums and has earned only ~$8 lifetime.
+His DistroKid earnings break down like this — and the pattern is the WHOLE strategy:
+- Audiomack:        $3.83   ← #1 earner
+- Apple Music:      $2.84   ← #2 earner
+- YouTube (Ads):    $1.16
+- YouTube (Red):    $0.10
+- TikTok:           $0.02
+- Facebook:         $0.02
+- Amazon Prime:     $0.01
+- Spotify:          $0.00   ← essentially zero discovery
+- Boomplay:         $0.00   ← distributed but never promoted (big upside)
+
+INTERPRETATION (do not deviate from this read):
+1. The audience forming is AFRICAN / DIASPORA. Audiomack and Boomplay dominate
+   Tanzania, Kenya, Nigeria. That is where Justin's listeners actually are.
+2. Spotify-first advice is the WRONG playbook for him right now. Do not lead with it.
+3. The goal for the next 90 days is NOT money — it is DELIBERATE GROWTH where the
+   audience already exists, using AUDIO-ONLY content (no video shoots).
+
+═══ AUDIO-ONLY MANDATE ═══
+Justin does NOT want to film himself. Every tactic you propose must work with
+existing assets: the audio files, cover art, and lyrics. Acceptable content types:
+- Animated waveform videos (AKILI generates these from the WAV + cover — no camera)
+- Lyric / quote cards (carousels, Reels, Pins)
+- 15–30s audio hooks clipped from tracks
+- Cover-art posts with a strong caption
+NEVER propose "film a video", "shoot a clip", or anything requiring Justin on camera.
+
+═══ PRIORITY STACK (always pitch in this order) ═══
+TIER 1 — Lean into the real audience:
+① Audiomack — grow Supporters, pitch Audiomack editorial playlists, post the link
+   everywhere. It is already the #1 earner; double down.
+② Boomplay — pitch for playlist placement (huge in TZ/KE, currently $0 = pure upside).
+③ Geo-target promo to Tanzania, Kenya, Nigeria + diaspora in Canada/UK/US.
+
+TIER 2 — Audio-only content engine (zero filming):
+④ Waveform videos for every track → Reels, TikTok, Shorts, Snap Spotlight.
+⑤ Lyric cards + 15–30s hooks → IG carousels, Threads, X.
+
+TIER 3 — The money levers (set once, only after streams build):
+⑥ Spotify Discovery Mode + Marquee (LATER — only when there are streams to amplify).
+⑦ Playlist pitching: SubmitHub, Groover, Daily Playlists, direct curator DMs.
+⑧ DistroKid hygiene: correct splits, ContentID ON, submit Spotify editorial pitch
+   BEFORE each release date.
+⑨ Sync licensing (audio placed in others' videos/ads) — highest $/play, no shoots.
 
 MUSIC ECOSYSTEM:
-- Artist: Justin Mafie
-- Label: CREOVA Music
-- Studio: Sankofa Studio (@sankofastudio__)
+- Artist: Justin Mafie | Label: CREOVA Music | Studio: Sankofa Studio (@sankofastudio__)
 - Distribution: DistroKid
-- Primary: Spotify, Apple Music, TikTok, YouTube Music
-- Promotion handles: @creativeinnovation__, @sankofastudio__
+- Promotion handles: @creativeinnovation__, @sankofastudio__, @jj_mafie
+- Funnel: every post drives to creova.one
 
-GROWTH TARGETS (monthly):
-- Spotify streams: +500/month → grow monthly listeners
-- Instagram (@jj_mafie): +300 followers/month
-- Instagram (@creovasolutions): +200 followers/month
-- LinkedIn: +100 connections/month
-- TikTok: +500 followers/month
-- Snapchat Creator score: grow consistently
-- creova.one traffic: +50 visits/week
-
-STREAM GROWTH TACTICS:
-1. Playlist pitching — identify and pitch independent curators
-2. TikTok music strategy — use song in original content + encourage UGC
-3. Instagram Reels — push songs into Reels music library
-4. Release strategy — single drops with 2-week campaign each
-5. Collaborations — find artists to feature/remix for cross-audience exposure
-6. Press pitching — blogs, podcasts, music media that cover African artists
+REALISTIC GROWTH TARGETS (monthly — honest, not hype):
+🎯 Audiomack plays: +1,000/month (cheapest growth, real audience)
+🎯 Boomplay: first 3 playlist placements
+🎯 Apple Music monthly listeners: steady upward trend
+🎯 Spotify: build to first editorial pitch — do not obsess over it yet
+🎯 IG @jj_mafie +300/mo · @creovasolutions +200/mo · TikTok +500/mo
 
 EXPERIMENT PROTOCOL:
-When running posting experiments:
-1. Pick ONE variable to test (time, format, caption length, hashtags)
-2. Run for 7 days
-3. Track: reach, engagement rate, saves, shares, profile visits
-4. Report results to Justin via Telegram every 3 days
-5. Implement winner — document in memory
+1. Pick ONE variable (post time, hook length, cover style, caption).
+2. Run 7 days. Track: plays, saves, shares, profile visits, link clicks.
+3. Report to Justin every 3 days. Implement the winner; log it to memory.
 
-SNAPCHAT CREATOR PROGRAM:
-Eligibility requirements to hit:
-- Consistent daily posting (Stories + Spotlight)
-- Growing subscriber count
-- High view retention rate
-- Authentic, engaging content
-Strategy: Show the founder-musician-tech builder lifestyle
-Best content: Studio sessions, product builds, CREOVA behind-scenes
+SNAPCHAT CREATOR PROGRAM (future goal):
+Consistent daily Stories + Spotlight, growing subscribers, high retention.
+Audio-only friendly: waveform Spotlights, studio audio snippets, behind-the-music.
 
-CROSS-POLLINATION STRATEGY (bridge audiences):
-Music fans → CREOVA tech:
-"The same creativity I bring to the studio at @sankofastudio__ 
-drives everything we build at @creovasolutions"
+CROSS-POLLINATION (bridge audiences, audio-only):
+Music fans → tech: "Same creativity from the studio at @sankofastudio__ drives what we build at @creovasolutions"
+Tech → music: "Break from building to drop new CREOVA Music — link in bio"
+Both → personal: "Beats or bytes — it's all CREOVA. @jj_mafie"
 
-Tech audience → Music:
-"Taking a break from building [product] to drop something 
-new from CREOVA Music — link in bio"
-
-Both → Personal brand:
-"Whether it's beats or bytes — it's all CREOVA. Follow the journey @jj_mafie"
-
-CONTENT HOOKS THAT ALWAYS WORK:
-- "Building [X] from [Y] — here's what I learned"
-- "African founder. Music producer. Tech builder. This is CREOVA."
-- "From St. Catharines to Dar es Salaam — we're global"
-- "Nobody talks about [insight] in African tech. Let's fix that."
-
-FUNNEL RULE: All roads lead to creova.one
-Every post, story, bio, and DM should drive to creova.one
+FUNNEL RULE: All roads lead to creova.one.
 """ + TELEGRAM_FORMAT
 
 
 class AmplifyAgent:
     def __init__(self, api_key: str, memory):
-        self.client = Anthropic(api_key=api_key)
+        self.client = AsyncAnthropic(api_key=api_key)
         self.memory = memory
-        log.info("AMPLIFY agent initialized")
+        log.info("AMPLIFY agent initialized (data-driven, audio-only strategy)")
+
+    async def _ask(self, prompt: str, max_tokens: int = 1500) -> str:
+        response = await self.client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=max_tokens,
+            system=AMPLIFY_PROMPT,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response.content[0].text
 
     async def handle(self, command: str) -> str:
         """Process a promotion/growth command from Justin."""
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1500,
-            system=AMPLIFY_PROMPT,
-            messages=[{"role": "user", "content": command}]
-        )
-        result = response.content[0].text
-        self.memory.daily_log(f"[AMPLIFY] Command: {command[:60]}")
+        try:
+            result = await self._ask(command)
+        except Exception as e:
+            log.error(f"[AMPLIFY] Error generating response: {e}")
+            result = f"⚠️ AMPLIFY encountered an error: {e}"
+        await self.memory.daily_log(f"[AMPLIFY] Command: {command[:60]}")
         return f"🔊 AMPLIFY\n\n{result}"
 
     async def heartbeat_check(self):
-        """Called every 30 min — checks growth metrics and experiments."""
-        now = datetime.now(ET)   # Eastern Time
+        """Called every 30 min — checks growth windows."""
+        now = datetime.now(ET)
         if 18 <= now.hour <= 22:
-            self.memory.daily_log("[AMPLIFY] Evening push window (ET) — engagement boost active")
+            await self.memory.daily_log("[AMPLIFY] Evening push window (ET) — engagement boost active")
         return None
 
-    async def music_release_campaign(self, song_title: str, release_date: str) -> str:
-        """Generate a full music release campaign plan."""
+    async def earnings_strategy(self, pasted_report: str = "") -> str:
+        """Analyze a DistroKid/earnings dump (or use the known baseline) and
+        return a prioritized, audio-only, Africa-first growth plan."""
+        extra = f"\nHere is Justin's latest earnings export to analyze:\n{pasted_report}\n" if pasted_report.strip() else \
+                "\nNo new export pasted — use the GROUND TRUTH baseline in your system prompt.\n"
+        prompt = f"""{extra}
+Produce a focused 30-day action plan that:
+① Names the top 3 platforms to pour effort into (justified by the numbers).
+② Gives 5 concrete AUDIO-ONLY actions Justin can do this week (no filming).
+③ Lists exactly which playlists/curators to pitch on Audiomack and Boomplay.
+④ States what to IGNORE for now (so he doesn't waste time).
+⑤ Sets one measurable 30-day target per priority platform.
+Be brutally practical. He has ~$8 lifetime and limited time."""
+        try:
+            return f"💰 EARNINGS STRATEGY\n\n{await self._ask(prompt, 2200)}"
+        except Exception as e:
+            log.error(f"[AMPLIFY] earnings_strategy error: {e}")
+            return f"⚠️ AMPLIFY Error: {e}"
+
+    async def audio_only_campaign(self, song_title: str) -> str:
+        """A full promo campaign for one track that requires NO filming."""
         prompt = f"""
-Create a complete release campaign for:
+Build a complete AUDIO-ONLY promotion campaign for the track: "{song_title}".
+No videos of Justin. Only waveform videos, lyric cards, hooks, cover-art posts.
+
+Include:
+① Asset checklist AKILI can auto-generate (waveform video square + vertical, 3 lyric cards, 1 hook clip).
+② 7-day rollout calendar across IG (@jj_mafie, @creativeinnovation__, @sankofastudio__), TikTok, Snap, Threads, X — with exact post times for an East-Africa + diaspora audience.
+③ Audiomack + Boomplay push steps.
+④ 3 ready-to-paste captions (one music, one personal, one cross-promo to creova.one).
+⑤ The single metric to watch each day.
+"""
+        try:
+            return f"🎵 AUDIO-ONLY CAMPAIGN: {song_title}\n\n{await self._ask(prompt, 3000)}"
+        except Exception as e:
+            log.error(f"[AMPLIFY] audio_only_campaign error: {e}")
+            return f"⚠️ AMPLIFY Error: {e}"
+
+    async def music_release_campaign(self, song_title: str, release_date: str) -> str:
+        """Full release campaign plan (audio-only, Africa-first)."""
+        prompt = f"""
+Create a complete AUDIO-ONLY release campaign for:
 Song: {song_title}
 Release Date: {release_date}
 
-Generate:
-1. Pre-release strategy (2 weeks before)
-   - Teaser content for each platform
-   - Playlist submission targets
-   - Press outreach list
-
-2. Release day plan
-   - Hour-by-hour posting schedule
-   - Stories, posts, tweets for each account
-   - Email blast to fans
-
-3. Post-release (2 weeks after)
-   - Sustain streams strategy
-   - UGC encouragement tactics
-   - TikTok viral push
-
-4. Metrics to track
-   - First 48-hour stream target
-   - Playlist add goal
-   - Engagement benchmarks
-
-Include specific captions and hooks for @creativeinnovation__ and @sankofastudio__
+1. Pre-release (2 weeks before): teasers per platform, Audiomack/Boomplay/Spotify-editorial
+   submission targets, press outreach list focused on African music blogs.
+2. Release day: hour-by-hour posting schedule (East-Africa + diaspora time zones),
+   captions for each account, fan email blast.
+3. Post-release (2 weeks): sustain plays, UGC prompts, hook-clip strategy.
+4. Metrics: first-48h play target, playlist-add goal, engagement benchmarks.
+Captions for @creativeinnovation__ and @sankofastudio__. No filming.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=3000,
-            system=AMPLIFY_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"🎵 RELEASE CAMPAIGN: {song_title}\n\n{response.content[0].text}"
+        try:
+            return f"🎵 RELEASE CAMPAIGN: {song_title}\n\n{await self._ask(prompt, 3000)}"
+        except Exception as e:
+            log.error(f"[AMPLIFY] Error generating release campaign: {e}")
+            return f"⚠️ AMPLIFY Error: {e}"
 
     async def growth_experiment(self, platform: str, variable: str) -> str:
-        """Design a growth experiment for a platform."""
         prompt = f"""
-Design a 7-day growth experiment for {platform}.
-Variable to test: {variable}
-
-Include:
-- Hypothesis
-- Test A vs Test B
-- What to measure
-- How to measure it
-- Decision criteria (what result = implement winner)
-- Reporting schedule (send to Justin every 3 days)
+Design a 7-day growth experiment for {platform}. Variable to test: {variable}.
+Include: hypothesis, Test A vs Test B, what to measure, how to measure,
+decision criteria (what result = implement winner), reporting schedule (every 3 days).
+Keep it audio-only friendly.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1000,
-            system=AMPLIFY_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"🧪 GROWTH EXPERIMENT\n\n{response.content[0].text}"
+        try:
+            return f"🧪 GROWTH EXPERIMENT\n\n{await self._ask(prompt, 1000)}"
+        except Exception as e:
+            log.error(f"[AMPLIFY] Error designing growth experiment: {e}")
+            return f"⚠️ AMPLIFY Error: {e}"
 
     async def playlist_pitch_pack(self, song: str, genre: str) -> str:
-        """Generate a playlist pitching package."""
         prompt = f"""
 Create a playlist pitching package for:
-Song: {song}
-Genre: {genre}
-Artist: Justin Mafie / CREOVA Music
+Song: {song} | Genre: {genre} | Artist: Justin Mafie / CREOVA Music
 
 Include:
-1. Short pitch email (3 sentences max)
-2. Song description for curators
-3. Target playlist categories
-4. 10 specific independent playlists to target
-5. Pitch timing strategy
+1. Short pitch message (3 sentences max).
+2. Song description for curators.
+3. Target categories — PRIORITIZE Audiomack and Boomplay playlists + African/diaspora
+   curators first, then SubmitHub/Groover, then Spotify independent playlists.
+4. 10 specific playlists/curators to target (mix Audiomack, Boomplay, indie Spotify).
+5. Pitch timing strategy relative to release.
 """
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1500,
-            system=AMPLIFY_PROMPT,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"🎧 PLAYLIST PITCH PACK\n\n{response.content[0].text}"
+        try:
+            return f"🎧 PLAYLIST PITCH PACK\n\n{await self._ask(prompt, 1500)}"
+        except Exception as e:
+            log.error(f"[AMPLIFY] Error generating playlist pitch pack: {e}")
+            return f"⚠️ AMPLIFY Error: {e}"
+
+    async def generate_data_snapshot(self, topic: str) -> str:
+        prompt = f"""
+Extract 3 highly impactful statistics related to: {topic}
+Format for a 3-slide LinkedIn carousel (Data Snapshot Cards).
+Per slide: 1) punchy headline, 2) the core stat, 3) a 1-sentence takeaway.
+Professional, authoritative, concise.
+"""
+        try:
+            return f"📊 DATA SNAPSHOT (LinkedIn)\n\n{await self._ask(prompt, 1000)}"
+        except Exception as e:
+            log.error(f"[AMPLIFY] Error generating snapshot: {e}")
+            return f"⚠️ AMPLIFY Error: {e}"

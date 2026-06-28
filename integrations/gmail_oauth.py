@@ -12,6 +12,7 @@
 import os
 import json
 import logging
+import aiofiles
 import aiohttp
 from aiohttp import web
 
@@ -40,19 +41,20 @@ def _redirect_uri() -> str:
     return f"https://{domain}/gmail/callback"
 
 
-def _load_creds(account: str) -> dict | None:
+async def _load_creds(account: str) -> dict | None:
     path = CREDENTIALS.get(account)
     if not path or not os.path.exists(path):
         return None
-    with open(path) as f:
-        raw = json.load(f)
+    async with aiofiles.open(path) as f:
+        content = await f.read()
+        raw = json.loads(content)
     return raw.get("installed") or raw.get("web") or raw
 
 
 async def handle_gmail_auth(request: web.Request) -> web.Response:
     """Step 1 — Build Google OAuth URL and redirect Justin."""
     account = request.rel_url.query.get("account", "personal")
-    creds = _load_creds(account)
+    creds = await _load_creds(account)
 
     if not creds:
         return web.Response(
@@ -100,7 +102,7 @@ async def handle_gmail_callback(request: web.Request) -> web.Response:
     if not code:
         return _error_page("No authorization code returned by Google.", account)
 
-    creds = _load_creds(account)
+    creds = await _load_creds(account)
     if not creds:
         return _error_page(f"Credentials file missing for '{account}'.", account)
 
@@ -151,8 +153,8 @@ async def handle_gmail_callback(request: web.Request) -> web.Response:
     }
     token_path = TOKENS[account]
     os.makedirs(os.path.dirname(token_path), exist_ok=True)
-    with open(token_path, "w") as f:
-        json.dump(token_obj, f, indent=2)
+    async with aiofiles.open(token_path, "w") as f:
+        await f.write(json.dumps(token_obj, indent=2))
 
     log.info(f"[Gmail OAuth] ✅ Token saved → {token_path} | Email: {email}")
 

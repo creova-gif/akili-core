@@ -9,7 +9,7 @@ import aiohttp
 import subprocess
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 from skills.shared.telegram_formatter import formatter, DIVIDER
 
 log = logging.getLogger("SHIELD")
@@ -74,21 +74,25 @@ GITHUB_HEADERS = {
 
 class ShieldAgent:
     def __init__(self, api_key: str, memory):
-        self.client       = Anthropic(api_key=api_key)
+        self.client       = AsyncAnthropic(api_key=api_key)
         self.memory       = memory
         self.github_token = GITHUB_TOKEN
         log.info("SHIELD agent initialized")
 
     # ── Main command handler ──────────────────────────────────
     async def handle(self, command: str) -> str:
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1000,
-            system=SHIELD_PROMPT,
-            messages=[{"role": "user", "content": command}]
-        )
-        result = response.content[0].text
-        self.memory.daily_log(f"[SHIELD] Command: {command[:60]}")
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1000,
+                system=SHIELD_PROMPT,
+                messages=[{"role": "user", "content": command}]
+            )
+            result = response.content[0].text
+        except Exception as e:
+            log.error(f"[SHIELD] Error generating response: {e}")
+            result = f"⚠️ SHIELD encountered a cognitive error: {e}"
+        await self.memory.daily_log(f"[SHIELD] Command: {command[:60]}")
         return f"🛡 SHIELD\n\n{result}"
 
     # ── Enhanced heartbeat: full system scan ──────────────────
@@ -119,7 +123,7 @@ class ShieldAgent:
         if sys_info.get("warning"):
             issues.append(sys_info["warning"])
 
-        self.memory.daily_log(f"[SHIELD] Heartbeat — {len(issues)} issue(s)")
+        await self.memory.daily_log(f"[SHIELD] Heartbeat — {len(issues)} issue(s)")
 
         if issues:
             return formatter.format("SHIELD", "alert", {
@@ -176,18 +180,25 @@ class ShieldAgent:
 
     # ── Quick secret scan ─────────────────────────────────────
     async def _quick_secret_scan(self) -> str:
-        """Scan local .py files for accidentally hardcoded secrets."""
+        """Scan local .py files for accidentally hardcoded secrets natively."""
         dangerous = ["sk-", "AIza", "AKIA", "ghp_", "xox", "-----BEGIN"]
+        found_files = []
         try:
-            result = subprocess.run(
-                ["grep", "-r", "--include=*.py", "-l"] + dangerous + ["."],
-                capture_output=True, text=True, timeout=10
-            )
-            if result.stdout.strip():
-                files = [f for f in result.stdout.strip().split("\n")
-                         if "attached_assets" not in f and "__pycache__" not in f]
-                if files:
-                    return f"⚠️ Potential secrets in: {', '.join(files[:3])}"
+            import glob
+            import aiofiles
+            for filepath in glob.glob("**/*.py", recursive=True):
+                if "attached_assets" in filepath or "__pycache__" in filepath:
+                    continue
+                try:
+                    async with aiofiles.open(filepath, "r", encoding="utf-8") as f:
+                        content = await f.read()
+                        if any(d in content for d in dangerous):
+                            found_files.append(filepath)
+                except Exception:
+                    pass
+
+            if found_files:
+                return f"⚠️ Potential secrets in: {', '.join(found_files[:3])}"
             return "No hardcoded secrets detected ✅"
         except Exception as e:
             return f"Scan skipped: {str(e)[:40]}"

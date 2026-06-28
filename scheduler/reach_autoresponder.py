@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 from datetime import datetime
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 log = logging.getLogger("REACH.AutoResponder")
 
@@ -43,7 +43,7 @@ class ReachAutoResponder:
     def __init__(self, telegram_app, gmail_client=None):
         self.app    = telegram_app
         self.gmail  = gmail_client
-        self.client = Anthropic(api_key=ANTHROPIC_KEY)
+        self.client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
         self.replied = set()
         log.info("REACH AutoResponder initialized")
 
@@ -164,7 +164,7 @@ Style: {style}
 Write ONLY the email body, under 120 words. Sign as: Justin | CREOVA · creova.one"""
 
         try:
-            response = self.client.messages.create(
+            response = await self.client.messages.create(
                 model="claude-sonnet-4-5",
                 max_tokens=300,
                 system=JUSTIN_VOICE,
@@ -189,14 +189,18 @@ Write ONLY the email body, under 120 words. Sign as: Justin | CREOVA · creova.o
 Write a complete email reply from Justin Mafie. Under 150 words.
 Sign as: Justin | CREOVA · creova.one
 Return ONLY the email body."""
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=400,
-            system=JUSTIN_VOICE,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        draft = response.content[0].text.strip()
-        return f"📨 REACH — Draft reply:\n\n{draft}\n\n✏️ Edit and send yourself, or copy into Gmail."
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=400,
+                system=JUSTIN_VOICE,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            draft = response.content[0].text.strip()
+            return f"📨 REACH — Draft reply:\n\n{draft}\n\n✏️ Edit and send yourself, or copy into Gmail."
+        except Exception as e:
+            log.error(f"[REACH] Draft reply error: {e}")
+            return f"⚠️ REACH Error: {e}"
 
     async def repurpose(self, original: str, source: str = "original") -> str:
         prompt = f"""Original content from {source}:
@@ -210,10 +214,14 @@ Repurpose into ALL 5 platforms:
 5. Facebook (casual, 80-100 words)
 
 Justin's voice throughout. Cross-mention CREOVA handles naturally in each."""
-        response = self.client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1200,
-            system=JUSTIN_VOICE,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return f"♻️ REACH — Repurposed:\n\n{response.content[0].text}"
+        try:
+            response = await self.client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1200,
+                system=JUSTIN_VOICE,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return f"♻️ REACH — Repurposed:\n\n{response.content[0].text}"
+        except Exception as e:
+            log.error(f"[REACH] Repurpose error: {e}")
+            return f"⚠️ REACH Error: {e}"
