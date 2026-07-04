@@ -19,8 +19,11 @@ try:
 except Exception:
     pass
 
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    Application, CommandHandler, MessageHandler, CallbackQueryHandler,
+    filters, ContextTypes,
+)
 
 ET = ZoneInfo("America/Toronto")   # EDT in summer, EST in winter — auto-adjusts
 
@@ -34,6 +37,12 @@ from memory.manager import MemoryManager
 from integrations import IntegrationHub
 from integrations.tiktok_oauth import create_web_app
 from integrations.voice import VoiceEngine
+
+# Closed-loop infrastructure — action safety, cost visibility, outcomes
+from core.action_guard import ActionGuard, looks_destructive, parse_confirm
+from core.ai_client import get_client, usage_log
+from core.outcome_tracker import tracker as outcome_tracker
+from config.ai_models import MODEL, GENERAL_MODEL
 
 # Phase 3 modules
 from scheduler.pulse_scheduler    import PulseScheduler
@@ -195,6 +204,10 @@ class AkiliCore:
         self.jt_optimizer = None              # JustTech weekly improvement loop
         self.bot = None
 
+        # Closed-loop safety — code-level (not just prompt-level) confirmation
+        # gate for destructive/irreversible actions. See core/action_guard.py.
+        self.guard = ActionGuard()
+
         log.info("AKILI CORE initialized — all 5 agents + integration hub loaded")
 
     def init_phase3(self, telegram_app):
@@ -210,7 +223,107 @@ class AkiliCore:
         log.info("Phase 3+5 modules initialized — PULSE Scheduler · REACH AutoResponder · INTEL LiveBrief · Lead Engine · JustTech Optimizer")
 
     async def route_command(self, text: str, chat_id: str) -> str:
-        """Routes Justin's commands to the right agent."""
+        """Entry point for every message. This is the closed-loop safety
+        gatekeeper — it runs BEFORE any routing/agent logic:
+          1. If the message is a CONFIRM token → execute the pending action.
+          2. Else, any pending proposal is cancelled (no stale approvals).
+          3. If the message matches a destructive pattern → don't execute
+             it, propose it instead and require an explicit CONFIRM reply.
+          4. Otherwise → fall through to normal routing (_execute).
+        This makes MEMORY.md's "never delete without confirming twice"
+        rule a code guarantee, not just a system-prompt instruction the
+        model has to remember to follow.
+        """
+        confirm_token = parse_confirm(text)
+        if confirm_token:
+            return await self.guard.confirm(confirm_token)
+
+        if self.guard.has_pending():
+            await self.guard.discard_all_pending(reason="new_message_received")
+
+        # ── Outcome logging: "outcome <id> key=value key=value" ─
+        if text.lower().startswith("outcome "):
+            return await self._handle_outcome_command(text)
+
+        # ── Cost visibility ─────────────────────────────────────
+        if text.lower().strip() in ("/costs", "costs", "spend", "ai spend", "token usage"):
+            return self._format_cost_report()
+
+        if looks_destructive(text):
+            async def _confirmed_executor(_text=text, _chat_id=chat_id):
+                return await self._execute(_text, _chat_id)
+            return await self.guard.propose(
+                description=text.strip()[:200],
+                agent="AKILI",
+                executor=_confirmed_executor,
+                requested_by_text=text,
+            )
+
+        return await self._execute(text, chat_id)
+
+    def _format_cost_report(self) -> str:
+        s = usage_log.today_summary()
+        lines = [f"💰 AKILI — AI Spend Today ({s['date']})",
+                  "━━━━━━━━━━━━━━━━━━━━",
+                  f"Total: ${s['total_cost_usd']:.4f} across {s['total_calls']} calls"
+                  + (f" · {s['errors']} errors" if s['errors'] else "")]
+        for agent, a in sorted(s["by_agent"].items(), key=lambda kv: -kv[1]["cost_usd"]):
+            lines.append(f"▸ {agent}: ${a['cost_usd']:.4f} ({a['calls']} calls, "
+                         f"{a['input_tokens']+a['output_tokens']:,} tokens)"
+                         + (f" — {a['errors']} errors" if a["errors"] else ""))
+        lines.append("⚡ Estimates from published Anthropic pricing, not a billing source of truth.")
+        return "\n".join(lines)
+
+    async def _format_outcome_nudge(self) -> str:
+        """Once a day: which of AKILI's own actions (posts, auto-replies) never
+        got outcome data reported back. Without this, outcome_tracker is just
+        a write-only log — this is the step that closes the loop into something
+        Justin actually has to look at."""
+        stale = []
+        for agent in ("PULSE", "REACH", "AMPLIFY", "INTEL"):
+            pending = await outcome_tracker.pending_without_outcome(agent, older_than_hours=24)
+            stale.extend(pending)
+        if not stale:
+            return ""
+        stale.sort(key=lambda r: r["ts"])
+        lines = ["🔁 <b>Unreported outcomes</b> (24h+ with no result logged):"]
+        for r in stale[:8]:
+            lines.append(f"▸ <code>{r['id']}</code> [{r['agent']}] {r['summary'][:55]}")
+        if len(stale) > 8:
+            lines.append(f"...and {len(stale) - 8} more.")
+        lines.append("Reply: <code>outcome [id] key=value</code> — or ignore if it doesn't matter.")
+        return "\n".join(lines)
+
+    async def _handle_outcome_command(self, text: str) -> str:
+        """Parses: outcome <action_id> key=value key=value ...
+        Feeds real-world results back into the outcome tracker so agents
+        can learn what actually worked — same pattern JUSTTECH already
+        uses for YouTube episodes, generalized to any agent's actions."""
+        parts = text.split()
+        if len(parts) < 3:
+            return ("Usage: outcome <action_id> key=value key=value ...\n"
+                    "Example: outcome a1b2c3d4 likes=340 saves=12 reach=5200")
+        action_id = parts[1]
+        metrics = {}
+        for kv in parts[2:]:
+            if "=" not in kv:
+                continue
+            k, v = kv.split("=", 1)
+            try:
+                v = float(v) if "." in v else int(v)
+            except ValueError:
+                pass
+            metrics[k] = v
+        if not metrics:
+            return "⚠️ No key=value pairs found. Example: outcome a1b2c3d4 likes=340"
+        ok = await outcome_tracker.log_outcome(action_id, metrics)
+        if not ok:
+            return f"⚠️ No tracked action with id {action_id}."
+        return f"📊 Logged outcome for {action_id}: {metrics}\n⚡ This feeds future generation for that agent."
+
+    async def _execute(self, text: str, chat_id: str) -> str:
+        """The original command router — picks which agent handles a
+        message. Only reached after route_command's safety gate."""
         text_lower = text.lower()
 
         # ── Phase 5.1: Content & Consulting Engine ─────────────
@@ -427,11 +540,10 @@ class AkiliCore:
             return await self.general_handle(text)
 
     async def general_handle(self, text: str) -> str:
-        from anthropic import AsyncAnthropic
-        client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
+        client = get_client(ANTHROPIC_KEY, "GENERAL")
         try:
             response = await client.messages.create(
-                model="claude-opus-4-5",
+                model=GENERAL_MODEL,
                 max_tokens=1000,
                 system=self.identity,
                 messages=[{"role": "user", "content": text}]
@@ -490,6 +602,16 @@ class AkiliCore:
             if now.hour == 8 and now.minute == 0:
                 try:
                     brief = await self.intel.daily_brief()
+                    try:
+                        brief = f"{brief}\n\n{self._format_cost_report()}"
+                    except Exception:
+                        log.exception("[BRIEF] Failed to append cost summary")
+                    try:
+                        nudge = await self._format_outcome_nudge()
+                        if nudge:
+                            brief = f"{brief}\n\n{nudge}"
+                    except Exception:
+                        log.exception("[BRIEF] Failed to append outcome nudge")
                     await app.bot.send_message(
                         chat_id=JUSTIN_CHAT_ID,
                         text=brief
@@ -532,6 +654,10 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "📨 <b>REACH</b> — Email · DMs · Repurposing\n"
         "🔍 <b>INTEL</b> — Research · VC Tracker · Leads\n"
         "🔊 <b>AMPLIFY</b> — Music · Streams · Campaigns\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "▸ <code>/menu</code> — tap-through agent menu (no typing)\n"
+        "▸ <code>/costs</code> — today's AI spend by agent\n"
+        "▸ <code>outcome [id] key=value</code> — log real results back in\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "📋 <b>Key Commands</b>\n"
         "▸ <code>POST/EDIT/SKIP [id]</code> — approve posts\n"
@@ -589,6 +715,67 @@ async def pending(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             "📡 <b>PULSE</b> — Scheduler initializing...",
             parse_mode="HTML"
         )
+
+# ── /menu — grouped command surface via inline keyboard ────────
+# Command sprawl (15+ slash commands + natural-language) is a real
+# discoverability problem on a phone. This groups the highest-use
+# action per agent behind one tap; everything else still works as
+# typed commands/natural language exactly as before.
+_MENU_ACTIONS = {
+    "menu_shield":  "security status",
+    "menu_pulse":   "content calendar this week",
+    "menu_reach":   "pending",
+    "menu_intel":   "research to reel",       # placeholder topic prompt below
+    "menu_amplify": "music strategy",
+    "menu_status":  "/status",
+    "menu_costs":   "/costs",
+}
+
+def _menu_keyboard() -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton("🛡️ SHIELD", callback_data="menu_shield"),
+         InlineKeyboardButton("📡 PULSE",  callback_data="menu_pulse")],
+        [InlineKeyboardButton("📨 REACH",  callback_data="menu_reach"),
+         InlineKeyboardButton("🔍 INTEL",  callback_data="menu_intel")],
+        [InlineKeyboardButton("📈 AMPLIFY", callback_data="menu_amplify")],
+        [InlineKeyboardButton("📊 Status", callback_data="menu_status"),
+         InlineKeyboardButton("💰 Costs",  callback_data="menu_costs")],
+    ]
+    return InlineKeyboardMarkup(rows)
+
+async def menu_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
+        return
+    await update.message.reply_text(
+        "🧭 <b>AKILI — Quick Menu</b>\n━━━━━━━━━━━━━━━━━━━━\nTap an agent for its default action, "
+        "or just type/speak naturally as always.",
+        parse_mode="HTML",
+        reply_markup=_menu_keyboard(),
+    )
+
+async def costs_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
+        return
+    await update.message.reply_text(akili._format_cost_report())
+
+async def menu_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if str(query.message.chat.id) != str(JUSTIN_CHAT_ID):
+        await query.answer()
+        return
+    await query.answer()
+    command_text = _MENU_ACTIONS.get(query.data)
+    if not command_text:
+        return
+    if command_text.startswith("/status"):
+        s = await akili.shield.status()
+        await query.message.reply_text(f"📊 <b>AKILI STATUS</b>\n━━━━━━━━━━━━━━━━━━━━\n\n{s}", parse_mode="HTML")
+        return
+    if command_text.startswith("/costs"):
+        await query.message.reply_text(akili._format_cost_report())
+        return
+    response = await akili.route_command(command_text, JUSTIN_CHAT_ID)
+    await query.message.reply_text(response, parse_mode="HTML")
 
 async def _deliver(update: Update, response: str, was_voice: bool = False):
     """Send a response as text (chunked) and, when appropriate, a spoken voice note."""
@@ -891,6 +1078,9 @@ async def main():
     app.add_handler(CommandHandler("jt_topics", jt_topics_cmd))
     app.add_handler(CommandHandler("jt_retro", jt_retro_cmd))     # run learning loop now
     app.add_handler(CommandHandler("jt_metrics", jt_metrics_cmd)) # feed performance back in
+    app.add_handler(CommandHandler("menu", menu_cmd))             # grouped inline-keyboard command surface
+    app.add_handler(CommandHandler("costs", costs_cmd))           # AI spend visibility
+    app.add_handler(CallbackQueryHandler(menu_callback, pattern="^menu_"))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))        # Jarvis voice in (voice notes)
     app.add_handler(MessageHandler(filters.AUDIO, handle_music_file))   # AMPLIFY: music file → visualizer
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))

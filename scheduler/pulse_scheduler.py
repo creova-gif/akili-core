@@ -10,7 +10,9 @@ import logging
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from anthropic import AsyncAnthropic
+from core.ai_client import get_client
+from core.outcome_tracker import tracker as outcome_tracker
+from config.ai_models import MODEL
 
 ET = ZoneInfo("America/Toronto")   # EDT in summer, EST in winter — auto-adjusts
 
@@ -74,7 +76,7 @@ class PulseScheduler:
     def __init__(self, telegram_app, integrations=None):
         self.app          = telegram_app
         self.integrations = integrations
-        self.client       = AsyncAnthropic(api_key=ANTHROPIC_KEY)
+        self.client       = get_client(ANTHROPIC_KEY, "PULSE")
         self.pending      = {}
         log.info("PULSE Scheduler initialized")
 
@@ -118,7 +120,7 @@ Write the post. Return ONLY valid JSON (no markdown):
 
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=600,
                 system=BRAND_VOICE,
                 messages=[{"role": "user", "content": prompt}]
@@ -165,8 +167,9 @@ Write the post. Return ONLY valid JSON (no markdown):
             approval_id = text.split(" ", 1)[1].strip()
             if approval_id in self.pending:
                 post = self.pending.pop(approval_id)
-                await self._execute_post(post)
-                return f"✅ Posted to {post['platform'].upper()} — {', '.join(post['accounts'])}"
+                action_id = await self._execute_post(post)
+                tag = f" · tracking as {action_id}" if action_id else ""
+                return f"✅ Posted to {post['platform'].upper()} — {', '.join(post['accounts'])}{tag}"
             return f"⚠️ No pending post: {approval_id}"
 
         elif text.upper().startswith("SKIP "):
@@ -184,43 +187,69 @@ Write the post. Return ONLY valid JSON (no markdown):
                 if approval_id in self.pending:
                     self.pending[approval_id]["content"]["caption"] = new_caption
                     post = self.pending.pop(approval_id)
-                    await self._execute_post(post)
-                    return f"✏️ Edited + posted to {post['platform'].upper()}"
+                    action_id = await self._execute_post(post)
+                    tag = f" · tracking as {action_id}" if action_id else ""
+                    return f"✏️ Edited + posted to {post['platform'].upper()}{tag}"
             return "⚠️ Edit format: EDIT [id] [new caption]"
 
         return None
 
-    async def _execute_post(self, post: dict):
+    async def _execute_post(self, post: dict) -> str | None:
+        """Publish (or hand off) the post, then log it as a sensed action.
+        Returns the outcome_tracker action_id, or None if publishing failed —
+        every branch here is a real-world action, so every branch gets logged.
+        """
         platform = post["platform"]
         content  = post["content"]
         caption  = content.get("caption", "")
         hashtags = " ".join(content.get("hashtags", []))
         full_text = f"{caption}\n\n{hashtags}".strip()
+        accounts  = post.get("accounts", [])
 
         log.info(f"[Scheduler] Executing {platform} post")
+        action_id = None
         try:
             if platform == "twitter" and self.integrations:
                 await self.integrations.twitter.post_tweet(full_text[:280])
+                action_id = await outcome_tracker.log_action(
+                    "PULSE", f"{platform}_post", summary=caption[:80],
+                    metadata={"platform": platform, "accounts": accounts,
+                              "mode": "auto_published", "full_text": full_text[:500]},
+                )
 
             elif platform == "linkedin" and self.integrations:
                 await self.integrations.linkedin.post_text(full_text)
+                action_id = await outcome_tracker.log_action(
+                    "PULSE", f"{platform}_post", summary=caption[:80],
+                    metadata={"platform": platform, "accounts": accounts,
+                              "mode": "auto_published", "full_text": full_text[:500]},
+                )
 
             elif platform in ("instagram", "tiktok", "facebook"):
+                action_id = await outcome_tracker.log_action(
+                    "PULSE", f"{platform}_post", summary=caption[:80],
+                    metadata={"platform": platform, "accounts": accounts,
+                              "mode": "manual_handoff", "full_text": full_text[:500]},
+                )
                 await self.app.bot.send_message(
                     chat_id=JUSTIN_CHAT_ID,
                     text=(
                         f"📸 {platform.upper()} approved!\n\n"
                         f"Caption:\n{full_text}\n\n"
-                        f"Post manually or reply: POSTMEDIA {platform} [image_url]"
-                    )
+                        f"Post manually or reply: POSTMEDIA {platform} [image_url]\n\n"
+                        f"📎 Tracking as <code>{action_id}</code> — report results later with:\n"
+                        f"<code>outcome {action_id} likes=.. reach=..</code>"
+                    ),
+                    parse_mode="HTML",
                 )
-            log.info(f"[Scheduler] ✅ {platform} complete")
+            log.info(f"[Scheduler] ✅ {platform} complete (action {action_id})")
         except Exception as e:
             log.error(f"[Scheduler] Post error: {e}")
             await self.app.bot.send_message(
                 chat_id=JUSTIN_CHAT_ID,
                 text=f"⚠️ PULSE: Failed to post to {platform}: {e}"
             )
+        return action_id
 
     def list_pending(self) -> str:
         if not self.pending:

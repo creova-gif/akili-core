@@ -9,7 +9,8 @@ import logging
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from anthropic import AsyncAnthropic
+from core.ai_client import get_client
+from config.ai_models import MODEL
 
 ET = ZoneInfo("America/Toronto")
 
@@ -32,7 +33,7 @@ class IntelLiveBrief:
     def __init__(self, telegram_app, memory):
         self.app    = telegram_app
         self.memory = memory
-        self.client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
+        self.client = get_client(ANTHROPIC_KEY, "INTEL")
         log.info("INTEL LiveBrief initialized — web search enabled")
 
     async def run(self):
@@ -96,7 +97,7 @@ Include: 3 priorities (CREOVA + content), 1 GoPay VC pitch tip, 1 music action i
 Format with ☀️ AKILI MORNING BRIEF header. Under 300 words. Real and actionable."""
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=600,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -108,7 +109,7 @@ Format with ☀️ AKILI MORNING BRIEF header. Under 300 words. Real and actiona
     async def _search_and_respond(self, prompt: str, fallback_fn=None) -> str:
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=1200,
                 tools=[{"type": "web_search_20250305", "name": "web_search"}],
                 messages=[{"role": "user", "content": prompt}]
