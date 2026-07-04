@@ -178,3 +178,9 @@ attached_assets/*credentials*
 tmp/
 media_cache/
 *.oga
+# Personal automation data - never commit (added after security hardening)
+akili-life/
+MEMORY.md
+snapchat_streak.json
+*.env
+*.env.local
