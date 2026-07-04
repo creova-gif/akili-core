@@ -10,6 +10,7 @@
 # daily brief read `usage_log.today_summary()` to surface it.
 # ============================================================
 
+import json
 import logging
 import os
 from collections import defaultdict
@@ -71,11 +72,13 @@ class UsageLog:
         if error:
             a["errors"] += 1
         try:
-            line = (f'{{"ts": "{date.today().isoformat()}", "agent": "{agent}", "model": "{model}", '
-                    f'"input_tokens": {input_tokens}, "output_tokens": {output_tokens}, '
-                    f'"cost_usd": {cost:.6f}, "error": {str(error).lower()}}}\n')
+            record = {
+                "ts": date.today().isoformat(), "agent": agent, "model": model,
+                "input_tokens": input_tokens, "output_tokens": output_tokens,
+                "cost_usd": round(cost, 6), "error": error,
+            }
             async with aiofiles.open(f"{USAGE_LOG_DIR}/{self._today.isoformat()}.jsonl", "a") as f:
-                await f.write(line)
+                await f.write(json.dumps(record) + "\n")
         except Exception:
             log.exception("[UsageLog] Failed to persist usage record (in-memory total still accurate)")
 

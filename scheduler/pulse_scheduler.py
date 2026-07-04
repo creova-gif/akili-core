@@ -168,8 +168,9 @@ Write the post. Return ONLY valid JSON (no markdown):
             if approval_id in self.pending:
                 post = self.pending.pop(approval_id)
                 action_id = await self._execute_post(post)
-                tag = f" · tracking as {action_id}" if action_id else ""
-                return f"✅ Posted to {post['platform'].upper()} — {', '.join(post['accounts'])}{tag}"
+                if not action_id:
+                    return f"⚠️ Failed to post to {post['platform'].upper()} — see error above."
+                return f"✅ Posted to {post['platform'].upper()} — {', '.join(post['accounts'])} · tracking as {action_id}"
             return f"⚠️ No pending post: {approval_id}"
 
         elif text.upper().startswith("SKIP "):
@@ -188,8 +189,9 @@ Write the post. Return ONLY valid JSON (no markdown):
                     self.pending[approval_id]["content"]["caption"] = new_caption
                     post = self.pending.pop(approval_id)
                     action_id = await self._execute_post(post)
-                    tag = f" · tracking as {action_id}" if action_id else ""
-                    return f"✏️ Edited + posted to {post['platform'].upper()}{tag}"
+                    if not action_id:
+                        return f"⚠️ Failed to post to {post['platform'].upper()} — see error above."
+                    return f"✏️ Edited + posted to {post['platform'].upper()} · tracking as {action_id}"
             return "⚠️ Edit format: EDIT [id] [new caption]"
 
         return None

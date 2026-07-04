@@ -40,8 +40,13 @@ class OutcomeTracker:
         return {}
 
     async def _save(self):
-        async with aiofiles.open(STORE_PATH, "w") as f:
+        """Writes to a temp file then atomically replaces the store, so a
+        crash mid-write can't leave outcomes.json truncated/corrupt (which
+        would otherwise silently discard every tracked action on next load)."""
+        tmp_path = STORE_PATH.with_suffix(".json.tmp")
+        async with aiofiles.open(tmp_path, "w") as f:
             await f.write(json.dumps(self._actions, indent=2))
+        os.replace(tmp_path, STORE_PATH)
 
     async def log_action(self, agent: str, action_type: str, summary: str, metadata: dict | None = None) -> str:
         async with self._lock:

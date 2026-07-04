@@ -5,6 +5,7 @@
 # ============================================================
 
 import asyncio
+import html
 import logging
 import os
 from datetime import datetime
@@ -118,9 +119,11 @@ class ReachAutoResponder:
             inbox = "Personal" if account == "personal" else "CREOVA Business"
             lines = [f"📨 <b>REACH — Auto-Replied ({inbox})</b>", "━━━━━━━━━━━━━━━━━━━━"]
             for r in auto_replied:
+                sender  = html.escape(r['sender'][:35])
+                preview = html.escape(r['reply_preview'])
                 lines.append(
-                    f"▸ <code>{r['action_id']}</code> {r['sender'][:35]} "
-                    f"[{r['classification']}]\n   \"{r['reply_preview']}...\""
+                    f"▸ <code>{r['action_id']}</code> {sender} "
+                    f"[{r['classification']}]\n   \"{preview}...\""
                 )
             lines.append("━━━━━━━━━━━━━━━━━━━━")
             lines.append("Wrong tone on any of these? Reply: <code>outcome [id] bad_reply=1</code>")

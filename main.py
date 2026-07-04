@@ -193,6 +193,7 @@ class AkiliCore:
         self.voice   = VoiceEngine()          # Jarvis voice layer
         self.justtech = JustTechAgent(ANTHROPIC_KEY, self.memory, self.voice)  # faceless YouTube
         self.identity = AKILI_IDENTITY
+        self._general_client = get_client(ANTHROPIC_KEY, "GENERAL")
 
         # Phase 3 — set by init_phase3()
         self.scheduler  = None
@@ -540,7 +541,7 @@ class AkiliCore:
             return await self.general_handle(text)
 
     async def general_handle(self, text: str) -> str:
-        client = get_client(ANTHROPIC_KEY, "GENERAL")
+        client = self._general_client
         try:
             response = await client.messages.create(
                 model=GENERAL_MODEL,
@@ -724,8 +725,8 @@ async def pending(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 _MENU_ACTIONS = {
     "menu_shield":  "security status",
     "menu_pulse":   "content calendar this week",
-    "menu_reach":   "pending",
-    "menu_intel":   "research to reel",       # placeholder topic prompt below
+    "menu_reach":   "pending posts",
+    "menu_intel":   "vc tracker",
     "menu_amplify": "music strategy",
     "menu_status":  "/status",
     "menu_costs":   "/costs",
