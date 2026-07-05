@@ -14,7 +14,7 @@ import json
 import logging
 import os
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime, timezone
 
 import aiofiles
 from anthropic import AsyncAnthropic
@@ -73,7 +73,7 @@ class UsageLog:
             a["errors"] += 1
         try:
             record = {
-                "ts": date.today().isoformat(), "agent": agent, "model": model,
+                "ts": datetime.now(timezone.utc).isoformat(), "agent": agent, "model": model,
                 "input_tokens": input_tokens, "output_tokens": output_tokens,
                 "cost_usd": round(cost, 6), "error": error,
             }
