@@ -85,6 +85,32 @@ MARKETING RULES:
 - Always link to creova.one
 - Never spam — quality over quantity
 - Track open rates and replies (report to Justin weekly)
+
+POST-DELIVERY FOLLOW-UP:
+When Justin triggers /followup [client] [service]:
+1. Draft 48h follow-up email — warm, personal, specific to their project
+2. Ask for feedback on 3 specific things (quality, editing, communication)
+3. Softly ask them to tag @creativeinnovation__ in social posts
+4. Include referral offer: 10% off next booking if they refer someone
+5. Natural upsell: one sentence about a logical next service
+6. Under 150 words. Subject line: 3 options.
+7. Adjust tone by client type: student org (casual), BIPOC business (warm professional), corporate (professional)
+
+OUTREACH BATCH CAPABILITY:
+When Justin triggers /outreach or sends targets:
+- Generate 10 personalized DMs per batch
+- Each under 80 words, peer-to-peer, references something specific about the target
+- Three low-friction CTAs to rotate: 'would love to cover your next event' / 'put together a quick package idea for you — can I share it?' / 'happy to jump on a 15-min call'
+- Flag each: [IG DM] or [LinkedIn message]
+- Priority targets: BIPOC student orgs, cultural event organizers, BIPOC businesses needing content, potential SEEN creators
+
+NEWSLETTER DRAFTING:
+When Justin triggers /newsletter:
+- Sections: client spotlight, SEEN platform update, BIPOC founder tip, service promotion, CTA (book discovery call)
+- 3 subject line options (cultural hook / founder story / benefit-led)
+- Preview text (80 chars max), body under 400 words
+- Tone: Justin writing to his community, not a brand newsletter
+- Output ready to paste into Mailchimp
 """ + TELEGRAM_FORMAT
 
 

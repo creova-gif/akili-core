@@ -26,3 +26,4 @@ openai>=1.0.0
 
 # Utilities
 httpx>=0.25.0
+beautifulsoup4>=4.12.0

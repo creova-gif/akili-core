@@ -33,6 +33,7 @@ from agents.reach import ReachAgent
 from agents.intel import IntelAgent
 from agents.amplify import AmplifyAgent
 from agents.justtech import JustTechAgent
+from agents.creova_media import CREOVAMediaAgent
 from memory.manager import MemoryManager
 from integrations import IntegrationHub
 from integrations.tiktok_oauth import create_web_app
@@ -54,6 +55,9 @@ from integrations.intel_lead_engine import IntelLeadEngine
 
 # JustTech — faceless YouTube production + self-improvement loop
 from scheduler.justtech_optimizer import JustTechOptimizer
+
+# CREOVA Media — agency ops agent + weekly automation engine
+from scheduler.creova_os import CREOVAOSScheduler
 
 # ── Logging ──────────────────────────────────────────────────
 os.makedirs("logs", exist_ok=True)
@@ -192,6 +196,7 @@ class AkiliCore:
         self.hub     = IntegrationHub()
         self.voice   = VoiceEngine()          # Jarvis voice layer
         self.justtech = JustTechAgent(ANTHROPIC_KEY, self.memory, self.voice)  # faceless YouTube
+        self.creova_media = CREOVAMediaAgent(ANTHROPIC_KEY, self.memory)  # agency ops
         self.identity = AKILI_IDENTITY
         self._general_client = get_client(ANTHROPIC_KEY, "GENERAL")
 
@@ -203,6 +208,7 @@ class AkiliCore:
         # Phase 5
         self.lead_engine = None
         self.jt_optimizer = None              # JustTech weekly improvement loop
+        self.creova_os = None                 # CREOVA Media weekly automation engine
         self.bot = None
 
         # Closed-loop safety — code-level (not just prompt-level) confirmation
@@ -221,7 +227,10 @@ class AkiliCore:
         self.responder = ReachAutoResponder(telegram_app, gmail_client)
         self.lead_engine = IntelLeadEngine(telegram_app, self.memory)
         self.jt_optimizer = JustTechOptimizer(telegram_app, self.justtech)
-        log.info("Phase 3+5 modules initialized — PULSE Scheduler · REACH AutoResponder · INTEL LiveBrief · Lead Engine · JustTech Optimizer")
+        self.creova_os = CREOVAOSScheduler(
+            telegram_app, self.memory, self.creova_media, self.pulse, self.reach
+        )
+        log.info("Phase 3+5 modules initialized — PULSE Scheduler · REACH AutoResponder · INTEL LiveBrief · Lead Engine · JustTech Optimizer · CREOVA OS Scheduler")
 
     async def route_command(self, text: str, chat_id: str) -> str:
         """Entry point for every message. This is the closed-loop safety
@@ -379,6 +388,74 @@ class AkiliCore:
                 topic = text[len(pfx):].strip()
                 if topic:
                     return await self.justtech.generate_episode(topic)
+
+        # ── CREOVA MEDIA: agency ops (inquiry, proposal, invoice, capacity, follow-up) ──
+        for pfx in ("/media ", "media "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.handle(text[len(pfx):].strip())
+
+        for pfx in ("/inquiry ", "inquiry "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.handle(f"New client inquiry — triage it:\n{text[len(pfx):].strip()}")
+
+        for pfx in ("/proposal ", "proposal "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.handle(f"Draft a full proposal for:\n{text[len(pfx):].strip()}")
+
+        for pfx in ("/followup ", "followup "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.handle(f"Draft a post-delivery follow-up for:\n{text[len(pfx):].strip()}")
+
+        if text_lower in ("/invoice", "run invoice chaser"):
+            return await self.creova_media.run_invoice_chaser()
+
+        if text_lower in ("/capacity", "capacity check"):
+            return await self.creova_media.run_capacity_check()
+        for pfx in ("/capacity ", "capacity check "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.run_capacity_check(text[len(pfx):].strip())
+
+        # ── CREOVA MEDIA: on-demand triggers for the weekly automations ──
+        if text_lower in ("/content", "content calendar next week"):
+            return await self.pulse.handle("Build next week's full content calendar per the Friday content-build routine.")
+
+        for pfx in ("/captions ", "captions for "):
+            if text_lower.startswith(pfx):
+                return await self.pulse.handle(f"Generate a caption + hashtag batch for: {text[len(pfx):].strip()}")
+
+        if text_lower in ("/newsletter", "draft newsletter"):
+            return await self.reach.handle("Draft this month's CREOVA newsletter per the monthly newsletter routine.")
+
+        if text_lower in ("/outreach", "outreach batch"):
+            return await self.reach.handle("Generate this week's 10-DM outreach batch per the Tuesday outreach routine.")
+
+        if text_lower in ("/close", "financial close", "monthly close"):
+            return await self.shield.handle("Run the monthly financial close per the CREOVA OS routine.")
+
+        if text_lower in ("/grants", "grant deadlines"):
+            return await self.shield.handle("Run the grant + compliance deadline check.")
+
+        # ── AMPLIFY: SEEN platform + CREOVA Fashion ──
+        for pfx in ("/cmf ", "cmf "):
+            if text_lower.startswith(pfx):
+                return await self.amplify.handle(f"Draft this CMF grant application section: {text[len(pfx):].strip()}")
+
+        for pfx in ("/seen ", "seen "):
+            if text_lower.startswith(pfx):
+                return await self.amplify.handle(f"SEEN platform ops: {text[len(pfx):].strip()}")
+
+        for pfx in ("/drop ", "fashion drop "):
+            if text_lower.startswith(pfx):
+                return await self.amplify.handle(f"Build a CREOVA Fashion drop campaign: {text[len(pfx):].strip()}")
+
+        for pfx in ("/vip ",):
+            if text_lower.startswith(pfx):
+                return await self.amplify.handle(f"Generate the VIP early-access message for this drop: {text[len(pfx):].strip()}")
+
+        # ── INTEL: CREOVA Fashion supply chain check ──
+        for pfx in ("/supply ", "supply check "):
+            if text_lower.startswith(pfx):
+                return await self.intel.handle(f"Supply chain status check with FX impact: {text[len(pfx):].strip()}")
 
         # ── Phase 3: PULSE approval flow (POST / EDIT / SKIP) ─
         if self.scheduler and text.upper().startswith(("POST ", "EDIT ", "SKIP ")):
@@ -677,6 +754,15 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "▸ <code>competitor [product]</code> — competitor intel\n"
         "▸ <code>health check</code> — all platform status\n"
         "▸ <code>snapchat plan</code> — today's Snap content\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🎨 <b>CREOVA MEDIA — Agency Ops (NEW)</b>\n"
+        "▸ <code>media [message]</code> — talk to the agency ops agent\n"
+        "▸ <code>inquiry [details]</code> · <code>proposal [details]</code>\n"
+        "▸ <code>/invoice</code> · <code>/capacity</code> · <code>followup [client] [service]</code>\n"
+        "▸ <code>/content</code> · <code>captions for [shoot]</code> · <code>/newsletter</code> · <code>/outreach</code>\n"
+        "▸ <code>/close</code> · <code>/grants</code> — financial close, grant deadlines\n"
+        "▸ <code>cmf [section]</code> · <code>seen [query]</code> · <code>fashion drop [details]</code> · <code>/vip [drop]</code>\n"
+        "▸ <code>supply check [order list]</code> — supply chain + FX impact\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "🎙 <b>Jarvis Voice + 🎵 Music (NEW)</b>\n"
         "▸ send a 🎙 <b>voice note</b> — talk to AKILI, hear it reply\n"
@@ -1110,6 +1196,9 @@ async def main():
 
         # JustTech weekly improvement loop
         asyncio.create_task(akili.jt_optimizer.run())
+
+        # CREOVA Media weekly automation engine
+        asyncio.create_task(akili.creova_os.run())
 
         # Keep running until interrupted
         stop = asyncio.Event()

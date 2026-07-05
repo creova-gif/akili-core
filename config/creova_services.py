@@ -170,3 +170,79 @@ When reporting streaming wins, include: 'This campaign is available for other ar
 Sankofa Studio content should always mention booking availability.
 """,
 }
+
+
+# ============================================================
+# CREOVA MEDIA — AGENCY OPERATIONS CONTEXT
+# Read by agents/creova_media.py and scheduler/creova_os.py.
+# Business context that used to live in MEMORY.md before that
+# file was scrubbed from this (now public) repo's history.
+# ============================================================
+
+CREOVA_MEDIA_CONTEXT = """
+CREOVA MEDIA BUSINESS CONTEXT:
+- Type: Black-owned creative agency + platform company
+- Location: Ontario, Canada (Niagara / GTHA region)
+- Founded: April 2025 by Justin Mafie
+- Status: Revenue generating, bootstrapped
+- Website: creova.one | IG: @creativeinnovation__
+
+THREE BUSINESS LINES:
+1. Creative Agency — photography, videography, branding, social media management
+2. SEEN — audio-first streaming platform for Canadian equity-deserving creators (MVP complete)
+3. CREOVA Fashion — culturally-rooted lifestyle clothing brand (Shopify)
+4. CREOVA Music — distributed via DistroKid (live on all DSPs)
+
+FINANCIAL OPERATING RULES:
+- Invoicing: Wave (waveapps.com) — Justin exports CSV weekly to data/wave_export.csv
+- Payment terms: 50% deposit + Net-15 balance
+- 2026 revenue target: $50,000+ creative agency
+- Monthly close: runs 1st of month via the CREOVA OS scheduler
+- Invoice chaser: runs every Monday 8:15 AM ET
+
+KEY 2026 DEADLINES:
+- CMF Convergent Stream application: June 2026
+- CREOVA Inc federal incorporation: Q2 2026 (target May)
+- IRAP application: after incorporation
+- BDC Black Entrepreneur Program: ongoing
+- SEEN soft launch: Q3 2026
+
+AUTOMATION SCHEDULE (CREOVAOSScheduler):
+- Monday 8:15 AM: invoice chaser + capacity monitor + compliance check
+- Tuesday 9:00 AM: 10 outreach DMs drafted and sent to Telegram
+- Friday 9:00 AM: next-week content calendar
+- Friday 9:30 AM: caption + hashtag batch
+- Last Friday of month: newsletter draft
+- 1st of month: monthly financial close
+
+PRIVACY / BLAST RADIUS (never violate):
+- CREOVA client data stays in Notion — Akili bridges but never stores PII in its own logs
+- Wave financial data is processed in-memory for a response only, never written to akili.log
+- Creator demographics for SEEN: never stored in Akili memory, only on the SEEN platform itself
+"""
+
+# Services & rates (used by CREOVAMediaAgent for proposals/quotes)
+CREOVA_MEDIA_SERVICES = """
+CREOVA MEDIA SERVICES & RATES:
+- Event photography half-day: $300-500 CAD
+- Event photography full-day: $600-900 CAD
+- Event videography (highlight reel): $600-1,000 CAD
+- Brand photography session: $400-800 CAD
+- Logo design package: $300-600 CAD
+- Full brand identity kit: $800-1,500 CAD
+- Social media management starter (8 posts/mo): $500/mo
+- Social media management growth (16 posts/mo): $800/mo
+- Social media management premium (30 posts + stories): $1,500/mo
+- Full content creation package: $1,500-4,000 CAD
+
+PAYMENT TERMS: 50% deposit to confirm, balance due on delivery (Net-15)
+PORTFOLIO: creova.one | Instagram: @creativeinnovation__
+"""
+
+# Capacity thresholds — SHIELD's financial-ops prompt and CREOVAMediaAgent
+# both reference these; kept in one place so they can't drift apart.
+CAPACITY_THRESHOLDS = {
+    "max_shoot_days_per_week":  3,
+    "max_retainer_clients":     5,
+    "max_work_hours_per_week": 50,
+}
