@@ -16,7 +16,7 @@ tweepy>=4.14.0
 # Google (Gmail)
 google-api-python-client>=2.100.0
 google-auth-httplib2>=0.1.1
-google-auth-oauthlib>=1.1.0
+google-auth-oauthlib>=1.4.0
 
 # Utilities
 asyncio-mqtt>=0.16.0
