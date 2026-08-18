@@ -1,0 +1,19 @@
+name: CI/CD Branching Pipeline
+
+on:
+  push:
+    branches: [dev, staging, main]
+  pull_request:
+    branches: [dev, staging, main]
+
+jobs:
+  validate:
+    name: Validate Code Changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - run: uv sync
+      - name: Run tests
+        run: uv run pytest || uv run python test_system.py
