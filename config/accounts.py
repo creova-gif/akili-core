@@ -95,6 +95,11 @@ INSTAGRAM_ACCOUNTS = {
 }
 
 # ── LINKEDIN (2 accounts) ─────────────────────────────────────
+def linkedin_client_secret() -> str:
+    """LinkedIn app client secret from the environment. Never a hardcoded value."""
+    return os.environ.get("LINKEDIN_CLIENT_SECRET", "").strip()
+
+
 LINKEDIN_ACCOUNTS = {
     "justin_mafie": {
         "label": "Justin Mafie",

@@ -18,7 +18,7 @@ log = logging.getLogger("AKILI.API")
 
 ANTHROPIC_KEY  = os.environ["ANTHROPIC_API_KEY"]
 JUSTIN_CHAT_ID = os.environ["JUSTIN_CHAT_ID"]
-API_SECRET     = os.environ.get("AKILI_API_SECRET", "akili-secret-change-this")
+API_SECRET     = os.environ.get("AKILI_API_SECRET", "")
 
 app = FastAPI(title="Akili OS API", version="3.0")
 
