@@ -43,7 +43,12 @@ outputType = "console"
 # ⚠️ SECRETS REMOVED — never store API keys in .replit (it is committed to git).
 # Add every secret in the Replit "Secrets" tab (lock icon) instead. They are
 # injected into the environment securely and are NOT committed.
+# Also add them to Deployment secrets for the published app.
 # A local .env (git-ignored) mirrors them for off-Replit runs — see .env.example.
+# Names only (no values in this file):
+#   ANTHROPIC_API_KEY
+#   LINKEDIN_CLIENT_SECRET
+#   AKILI_API_SECRET
 
 [[ports]]
 localPort = 8080

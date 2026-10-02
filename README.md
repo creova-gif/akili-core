@@ -64,6 +64,20 @@ cp .env.example .env
 # fill in your own keys in .env — this file is git-ignored
 ```
 
+### Required environment variables
+
+This app runs on Replit (`akili-core.replit.app`, deployment target `cloudrun`). Set secrets in the Replit Secrets tab and in Deployment secrets for the published app. For a local run, put the same names in `.env` (git-ignored). Do not put values in `.replit`.
+
+| Variable | Where it is set | Needed for |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Replit Secrets, Deployment secrets, or `.env` | Starting the app |
+| `TELEGRAM_TOKEN` | Replit Secrets, Deployment secrets, or `.env` | Starting the app |
+| `JUSTIN_CHAT_ID` | Replit Secrets, Deployment secrets, or `.env` | Starting the app |
+| `LINKEDIN_CLIENT_SECRET` | Replit Secrets, Deployment secrets, or `.env` | LinkedIn app client credential (OAuth). API posts use `LINKEDIN_ACCESS_TOKEN`. |
+| `AKILI_API_SECRET` | Replit Secrets, Deployment secrets, or `.env` | Authenticated command API. There is no built-in default. |
+
+If `ANTHROPIC_API_KEY`, `TELEGRAM_TOKEN`, or `JUSTIN_CHAT_ID` is missing, the process exits with an error that names the missing variable.
+
 ---
 
 ## Contributing
