@@ -272,6 +272,12 @@ class AkiliCore:
             if result:
                 return result
 
+        # ── Phase 3: REACH email approval (drafts never auto-send) ─
+        if ReachAutoResponder.is_approval_command(text):
+            if not self.responder:
+                return "⚠️ REACH is not ready."
+            return await self.responder.handle_approval(text)
+
         # ── Phase 3: Pending posts list ───────────────────────
         if "pending" in text_lower and "post" in text_lower:
             if self.scheduler:
@@ -535,7 +541,8 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "━━━━━━━━━━━━━━━━━━━━\n"
         "📋 <b>Key Commands</b>\n"
         "▸ <code>POST/EDIT/SKIP [id]</code> — approve posts\n"
-        "▸ <code>/pending</code> — posts awaiting approval\n"
+        "▸ <code>SENDEMAIL/EDITDRAFT/SKIPDRAFT [id]</code> — approve email drafts\n"
+        "▸ <code>/pending</code> — posts and email drafts awaiting approval\n"
         "▸ <code>research [topic]</code> — live web search\n"
         "▸ <code>vc tracker [product]</code> — investor intel\n"
         "▸ <code>find leads [service] [market]</code> — lead gen\n"
@@ -582,8 +589,13 @@ async def status(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def pending(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
         return
+    parts = []
     if akili.scheduler:
-        await update.message.reply_text(akili.scheduler.list_pending(), parse_mode="HTML")
+        parts.append(akili.scheduler.list_pending())
+    if akili.responder:
+        parts.append(akili.responder.list_pending())
+    if parts:
+        await update.message.reply_text("\n\n".join(parts), parse_mode="HTML")
     else:
         await update.message.reply_text(
             "📡 <b>PULSE</b> — Scheduler initializing...",
