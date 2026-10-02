@@ -32,17 +32,19 @@ AKILI is a multi-agent AI operating system for Justin Mafie and the CREOVA ecosy
 - **MEMORY MANAGER** (`memory/manager.py`) — PARA structure (Projects/Areas/Resources/Archives)
 - Stored at `./akili-life/`
 
-## Required Secrets (add in Replit Secrets tab)
+## Required Secrets (add in Replit Secrets tab and Deployment secrets)
 - `TELEGRAM_TOKEN` — From @BotFather
-- `ANTHROPIC_API_KEY` — Anthropic key
+- `ANTHROPIC_API_KEY` — Anthropic key (required to start)
 - `JUSTIN_CHAT_ID` — Your Telegram user ID (from @userinfobot)
+- `AKILI_API_SECRET` — Command API secret. The code has no built-in default.
+- `LINKEDIN_CLIENT_SECRET` — LinkedIn app client secret. API calls still use `LINKEDIN_ACCESS_TOKEN`.
 
 ## Platform Secrets (optional — add to unlock each integration)
 | Platform | Secrets needed |
 |---|---|
 | Instagram | `IG_USER_ID_*`, `IG_PAGE_ID_*`, `IG_TOKEN_*` (x4 accounts) |
 | Twitter/X | `TWITTER_API_KEY`, `TWITTER_API_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`, `TWITTER_BEARER_TOKEN` |
-| LinkedIn | `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_URN`, `LINKEDIN_COMPANY_URN` |
+| LinkedIn | `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_URN`, `LINKEDIN_COMPANY_URN` |
 | Facebook | `FB_PAGE_ID_JUSTIN`, `FB_TOKEN_JUSTIN`, `FB_PAGE_ID_CREOVA`, `FB_TOKEN_CREOVA` |
 | TikTok | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_ACCESS_TOKEN`, `TIKTOK_OPEN_ID` |
 | Gmail personal | Upload `config/gmail_personal_credentials.json`, run `python integrations/gmail.py personal` |

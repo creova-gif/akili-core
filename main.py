@@ -159,16 +159,25 @@ CROSS-PROMOTION RULE: Every post must mention at least one of:
 """
 
 
+def missing_required_secrets(env=None):
+    """Return required secret names that are unset or blank.
+
+    Values come from the process environment (Replit Secrets or a local .env).
+    Only names are returned.
+    """
+    source = os.environ if env is None else env
+    required = ("TELEGRAM_TOKEN", "ANTHROPIC_API_KEY", "JUSTIN_CHAT_ID")
+    missing = []
+    for name in required:
+        value = source.get(name)
+        if value is None or not str(value).strip():
+            missing.append(name)
+    return missing
+
+
 def _check_secrets():
     """Validate required secrets are present."""
-    missing = []
-    if not TELEGRAM_TOKEN:
-        missing.append("TELEGRAM_TOKEN")
-    if not ANTHROPIC_KEY:
-        missing.append("ANTHROPIC_API_KEY")
-    if not JUSTIN_CHAT_ID:
-        missing.append("JUSTIN_CHAT_ID")
-    return missing
+    return missing_required_secrets()
 
 
 # ── Akili Core ────────────────────────────────────────────────
@@ -872,10 +881,13 @@ async def main():
 
     missing = _check_secrets()
     if missing:
-        log.error(f"Missing required secrets: {', '.join(missing)}")
-        log.error("Please add these in the Secrets tab (lock icon) in Replit.")
-        log.error("Keys needed: TELEGRAM_TOKEN, ANTHROPIC_API_KEY, JUSTIN_CHAT_ID")
-        return
+        log.error(
+            "Missing required environment variables: %s. "
+            "Set them in Replit Secrets (and Deployment secrets for the published app) "
+            "or in a local .env file. See .env.example. Do not store secret values in .replit.",
+            ", ".join(missing),
+        )
+        raise SystemExit(1)
 
     akili = AkiliCore()
 

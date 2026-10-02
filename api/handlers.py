@@ -13,8 +13,10 @@ from anthropic import AsyncAnthropic
 
 log = logging.getLogger("AKILI.API")
 
-API_SECRET    = os.environ.get("AKILI_API_SECRET", "akili-justin-2026")
-ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+
+def _env_secret(name: str) -> str:
+    """Return a secret from the environment. Never falls back to a hardcoded value."""
+    return os.environ.get(name, "").strip()
 
 AGENT_ROUTES = {
     "SHIELD":  ["security", "github", "repo", "uptime", "breach", "protect", "scan"],
@@ -69,7 +71,18 @@ async def handle_api_command(request: web.Request) -> web.Response:
     secret  = body.get("secret", "")
     command = body.get("command", "").strip()
 
-    if secret != API_SECRET:
+    api_secret = _env_secret("AKILI_API_SECRET")
+    if not api_secret:
+        log.error(
+            "Missing required environment variable AKILI_API_SECRET. "
+            "Set it in Replit Secrets or a local .env file."
+        )
+        return web.json_response(
+            {"error": "Missing required environment variable AKILI_API_SECRET."},
+            status=500,
+        )
+
+    if not secret or secret != api_secret:
         return web.json_response({"error": "Unauthorized"}, status=401)
 
     if not command:
@@ -81,7 +94,17 @@ async def handle_api_command(request: web.Request) -> web.Response:
     log.info(f"[API] Command → {agent}: {command[:60]}")
 
     try:
-        client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
+        api_key = _env_secret("ANTHROPIC_API_KEY")
+        if not api_key:
+            log.error(
+                "Missing required environment variable ANTHROPIC_API_KEY. "
+                "Set it in Replit Secrets or a local .env file."
+            )
+            return web.json_response(
+                {"error": "Missing required environment variable ANTHROPIC_API_KEY."},
+                status=500,
+            )
+        client = AsyncAnthropic(api_key=api_key)
         response = await client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=1000,
