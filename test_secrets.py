@@ -7,6 +7,7 @@ import os
 
 from aiohttp import web
 
+import main as akili_main
 from api.handlers import handle_api_command
 from integrations.linkedin import linkedin_setup_error
 from main import missing_required_secrets
@@ -33,6 +34,18 @@ def test_blank_values_are_missing():
         "JUSTIN_CHAT_ID": "1",
     }
     assert missing_required_secrets(env) == ["TELEGRAM_TOKEN", "ANTHROPIC_API_KEY"]
+
+
+def test_startup_exits_when_required_secret_missing():
+    from unittest.mock import patch
+
+    with patch("main.missing_required_secrets", return_value=["ANTHROPIC_API_KEY"]):
+        try:
+            asyncio.run(akili_main.main())
+        except SystemExit as exc:
+            assert exc.code == 1
+            return
+    raise AssertionError("startup should exit when ANTHROPIC_API_KEY is missing")
 
 
 def test_linkedin_error_names_exact_variables():
@@ -75,6 +88,7 @@ def main():
     test_missing_required_names()
     test_present_required_names()
     test_blank_values_are_missing()
+    test_startup_exits_when_required_secret_missing()
     test_linkedin_error_names_exact_variables()
     asyncio.run(test_command_api_rejects_missing_secret())
     print("test_secrets: ok")
