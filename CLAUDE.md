@@ -1,23 +1,28 @@
-# CLAUDE.md — akili-core
+## gstack (REQUIRED — global install)
 
-## Project Overview
-Autonomous multi-agent AI OS running CREOVA's own operations (scheduling, monitoring, research agents). Python, `uv` package manager, Telegram + Anthropic API integration.
+**Before doing ANY work, verify gstack is installed:**
 
-## Testing — Known Gap
-`test_apis.py` and `test_system.py` exist but are **manual diagnostic/smoke-test scripts** (print-based, no `assert` statements, no pytest fixtures), not an automated test suite. Do not describe this repo as having real automated test coverage — it doesn't yet. If asked to add real tests, use `pytest` with actual assertions; don't just extend the existing print-based scripts.
+```bash
+_GS=""
+for _D in "${GSTACK_ROOT:-}" "$HOME/.claude/skills/gstack" "$HOME/.codex/skills/gstack" "$HOME/.factory/skills/gstack" "$HOME/.kiro/skills/gstack" "$HOME/.config/opencode/skills/gstack" "$HOME/.slate/skills/gstack" "$HOME/.cursor/skills/gstack" "$HOME/.openclaw/skills/gstack" "$HOME/.hermes/skills/gstack" "$HOME/.gbrain/skills/gstack" "$HOME/.copilot/skills/gstack" "$HOME/.gstack/repos/gstack"; do
+  [ -z "$_GS" ] && [ -n "$_D" ] && [ -d "$_D/bin" ] && _GS="$_D"
+done
+[ -n "$_GS" ] && echo "GSTACK_OK: $_GS" || echo "GSTACK_MISSING"
+```
 
-## Technology Stack
-Python 3.11+, `uv` for dependency management (`uv sync`), `anthropic`, `python-telegram-bot`, `aiohttp`.
+If GSTACK_MISSING: STOP. Do not proceed. Tell the user:
 
-## Repository Structure
-`agents/` — individual agent implementations (e.g. `ShieldAgent`, `IntelAgent`). `dashboard.py` — status dashboard. `main.py` — entry point.
+> gstack is required for all AI-assisted work in this repo.
+> Install it:
+> ```bash
+> git clone --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
+> cd ~/.claude/skills/gstack && ./setup --team
+> ```
+> Then restart your AI coding tool.
 
-## CI
-`uv sync` then attempts `pytest`, falling back to running `test_system.py` directly — reflects the current manual-script reality rather than pretending a real suite exists.
+Do not skip skills, ignore gstack errors, or work around missing gstack.
 
-## AI Agent Rules
-- Don't claim "Level 3" or "unit-tested" maturity for this repo — it's genuinely Level 1 (manual verification scripts only) until real pytest coverage is added.
-- New agents should follow the existing agent class pattern in `agents/`.
-
-## Definition of Done
-If you add real tests, they use pytest with assertions. State clearly whether new code has real automated coverage or just a manual verification script, and don't conflate the two.
+Using gstack skills: After install, skills like /qa, /ship, /review, /investigate,
+and /browse are available. Use /browse for all web browsing (Aside first, the bundled gstack browser as fallback).
+Use the resolved install path above for gstack file paths
+(default: ~/.claude/skills/gstack).

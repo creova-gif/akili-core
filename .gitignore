@@ -184,3 +184,4 @@ MEMORY.md
 snapchat_streak.json
 *.env
 *.env.local
+.claude/skills/gstack/

@@ -1,0 +1,28 @@
+name: akili-core
+owner: creova-gif
+
+stack:
+  language: ["python"]
+  framework: []
+
+skill_groups:
+  default: [engineering, product]
+  conditional:
+    design: [ui-ux]
+    security: [security]
+
+# null = no command detected -> agents must report NOT VERIFIED for that gate
+verification:
+  install: "uv sync"
+  lint: null
+  typecheck: null
+  test: null
+  build: null
+
+integrations:
+  github: true
+  linear: false   # set true once the Linear connector is authorized
+
+agent_runtime:
+  required: false
+  preferred: null
