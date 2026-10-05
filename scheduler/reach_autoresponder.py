@@ -5,10 +5,13 @@
 # ============================================================
 
 import asyncio
+import html
 import logging
 import os
 from datetime import datetime
-from anthropic import AsyncAnthropic
+from core.ai_client import get_client
+from core.outcome_tracker import tracker as outcome_tracker
+from config.ai_models import MODEL
 
 log = logging.getLogger("REACH.AutoResponder")
 
@@ -43,7 +46,7 @@ class ReachAutoResponder:
     def __init__(self, telegram_app, gmail_client=None):
         self.app    = telegram_app
         self.gmail  = gmail_client
-        self.client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
+        self.client = get_client(ANTHROPIC_KEY, "REACH")
         self.replied = set()
         log.info("REACH AutoResponder initialized")
 
@@ -86,6 +89,7 @@ class ReachAutoResponder:
 
         new_count    = 0
         urgent_count = 0
+        auto_replied: list[dict] = []
 
         for email in emails:
             msg_id = email.get("id", "")
@@ -100,12 +104,35 @@ class ReachAutoResponder:
                 urgent_count += 1
                 await self._flag_urgent(email, account)
             else:
-                await self._auto_reply(email, classification, account)
+                result = await self._auto_reply(email, classification, account)
+                if result:
+                    auto_replied.append(result)
 
             await asyncio.sleep(3)
 
         if new_count > 0:
             log.info(f"[REACH] {account}: {new_count} emails — {urgent_count} urgent")
+
+        # Digest of auto-replies actually sent — one batched message per run
+        # instead of zero visibility. This is the audit trail Justin actually sees.
+        if auto_replied and self.app and JUSTIN_CHAT_ID:
+            inbox = "Personal" if account == "personal" else "CREOVA Business"
+            lines = [f"📨 <b>REACH — Auto-Replied ({inbox})</b>", "━━━━━━━━━━━━━━━━━━━━"]
+            for r in auto_replied:
+                sender  = html.escape(r['sender'][:35])
+                preview = html.escape(r['reply_preview'])
+                lines.append(
+                    f"▸ <code>{r['action_id']}</code> {sender} "
+                    f"[{r['classification']}]\n   \"{preview}...\""
+                )
+            lines.append("━━━━━━━━━━━━━━━━━━━━")
+            lines.append("Wrong tone on any of these? Reply: <code>outcome [id] bad_reply=1</code>")
+            try:
+                await self.app.bot.send_message(
+                    chat_id=JUSTIN_CHAT_ID, text="\n".join(lines), parse_mode="HTML"
+                )
+            except Exception as e:
+                log.error(f"[REACH] Failed to send digest: {e}")
 
     def _classify(self, email: dict) -> str:
         combined = (
@@ -145,14 +172,18 @@ class ReachAutoResponder:
         )
         await self.app.bot.send_message(chat_id=JUSTIN_CHAT_ID, text=msg, parse_mode="HTML")
 
-    async def _auto_reply(self, email: dict, classification: str, account: str):
+    async def _auto_reply(self, email: dict, classification: str, account: str) -> dict | None:
+        """Sends the auto-reply and logs it as a sensed action. Returns a dict
+        with sender/classification/action_id/reply_preview for the caller to
+        surface to Justin — this is the audit trail for the one path in AKILI
+        that sends real outbound communication with no human in the loop."""
         sender  = email.get("from", "")
         subject = email.get("subject", "")
         body    = email.get("body", email.get("snippet", ""))[:400]
         msg_id  = email.get("id", "")
 
         if any(w in sender.lower() for w in NO_AUTO_REPLY):
-            return
+            return None
 
         style  = AUTO_REPLY_STYLES.get(classification, AUTO_REPLY_STYLES["general"])
         prompt = f"""Write a reply email for Justin Mafie.
@@ -165,7 +196,7 @@ Write ONLY the email body, under 120 words. Sign as: Justin | CREOVA · creova.o
 
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=300,
                 system=JUSTIN_VOICE,
                 messages=[{"role": "user", "content": prompt}]
@@ -180,9 +211,18 @@ Write ONLY the email body, under 120 words. Sign as: Justin | CREOVA · creova.o
                     account=account,
                     reply_to_id=msg_id,
                 )
-                log.info(f"[REACH] Auto-replied to {sender[:40]} ({classification})")
+                action_id = await outcome_tracker.log_action(
+                    "REACH", "auto_reply_email",
+                    summary=f"Replied to {sender[:50]} ({classification})",
+                    metadata={"account": account, "sender": sender, "subject": subject,
+                              "classification": classification, "reply_body": reply_body},
+                )
+                log.info(f"[REACH] Auto-replied to {sender[:40]} ({classification}) — action {action_id}")
+                return {"sender": sender, "classification": classification,
+                        "action_id": action_id, "reply_preview": reply_body[:100]}
         except Exception as e:
             log.error(f"[REACH] Auto-reply error: {e}")
+        return None
 
     async def draft_reply(self, context: str) -> str:
         prompt = f"""Justin needs to reply to: {context}
@@ -191,7 +231,7 @@ Sign as: Justin | CREOVA · creova.one
 Return ONLY the email body."""
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=400,
                 system=JUSTIN_VOICE,
                 messages=[{"role": "user", "content": prompt}]
@@ -216,7 +256,7 @@ Repurpose into ALL 5 platforms:
 Justin's voice throughout. Cross-mention CREOVA handles naturally in each."""
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=1200,
                 system=JUSTIN_VOICE,
                 messages=[{"role": "user", "content": prompt}]

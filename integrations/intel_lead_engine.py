@@ -14,7 +14,8 @@ import logging
 import aiohttp
 import asyncio
 from datetime import datetime
-from anthropic import AsyncAnthropic
+from core.ai_client import get_client
+from config.ai_models import MODEL
 from skills.shared.telegram_formatter import formatter, DIVIDER
 
 log = logging.getLogger("INTEL.LeadEngine")
@@ -35,7 +36,7 @@ class IntelLeadEngine:
     def __init__(self, telegram_app, memory):
         self.app    = telegram_app
         self.memory = memory
-        self.client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
+        self.client = get_client(ANTHROPIC_KEY, "INTEL")
         configured  = [k for k, v in [
             ("Apollo", APOLLO_API_KEY), ("Hunter", HUNTER_API_KEY), ("OpenVC", OPENVC_API_KEY)
         ] if v]
@@ -149,7 +150,7 @@ class IntelLeadEngine:
 
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=1200,
                 tools=[{"type": "web_search_20250305", "name": "web_search"}],
                 messages=[{"role": "user", "content":
@@ -233,7 +234,7 @@ class IntelLeadEngine:
         """Fallback lead gen using Anthropic web search when Apollo not configured."""
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-5",
+                model=MODEL,
                 max_tokens=1200,
                 tools=[{"type": "web_search_20250305", "name": "web_search"}],
                 messages=[{"role": "user", "content":

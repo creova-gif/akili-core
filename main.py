@@ -19,8 +19,11 @@ try:
 except Exception:
     pass
 
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    Application, CommandHandler, MessageHandler, CallbackQueryHandler,
+    filters, ContextTypes,
+)
 
 ET = ZoneInfo("America/Toronto")   # EDT in summer, EST in winter — auto-adjusts
 
@@ -30,10 +33,17 @@ from agents.reach import ReachAgent
 from agents.intel import IntelAgent
 from agents.amplify import AmplifyAgent
 from agents.justtech import JustTechAgent
+from agents.creova_media import CREOVAMediaAgent
 from memory.manager import MemoryManager
 from integrations import IntegrationHub
 from integrations.tiktok_oauth import create_web_app
 from integrations.voice import VoiceEngine
+
+# Closed-loop infrastructure — action safety, cost visibility, outcomes
+from core.action_guard import ActionGuard, looks_destructive, parse_confirm
+from core.ai_client import get_client, usage_log
+from core.outcome_tracker import tracker as outcome_tracker
+from config.ai_models import MODEL, GENERAL_MODEL
 
 # Phase 3 modules
 from scheduler.pulse_scheduler    import PulseScheduler
@@ -45,6 +55,9 @@ from integrations.intel_lead_engine import IntelLeadEngine
 
 # JustTech — faceless YouTube production + self-improvement loop
 from scheduler.justtech_optimizer import JustTechOptimizer
+
+# CREOVA Media — agency ops agent + weekly automation engine
+from scheduler.creova_os import CREOVAOSScheduler
 
 # ── Logging ──────────────────────────────────────────────────
 os.makedirs("logs", exist_ok=True)
@@ -183,7 +196,9 @@ class AkiliCore:
         self.hub     = IntegrationHub()
         self.voice   = VoiceEngine()          # Jarvis voice layer
         self.justtech = JustTechAgent(ANTHROPIC_KEY, self.memory, self.voice)  # faceless YouTube
+        self.creova_media = CREOVAMediaAgent(ANTHROPIC_KEY, self.memory)  # agency ops
         self.identity = AKILI_IDENTITY
+        self._general_client = get_client(ANTHROPIC_KEY, "GENERAL")
 
         # Phase 3 — set by init_phase3()
         self.scheduler  = None
@@ -193,7 +208,12 @@ class AkiliCore:
         # Phase 5
         self.lead_engine = None
         self.jt_optimizer = None              # JustTech weekly improvement loop
+        self.creova_os = None                 # CREOVA Media weekly automation engine
         self.bot = None
+
+        # Closed-loop safety — code-level (not just prompt-level) confirmation
+        # gate for destructive/irreversible actions. See core/action_guard.py.
+        self.guard = ActionGuard()
 
         log.info("AKILI CORE initialized — all 5 agents + integration hub loaded")
 
@@ -207,10 +227,113 @@ class AkiliCore:
         self.responder = ReachAutoResponder(telegram_app, gmail_client)
         self.lead_engine = IntelLeadEngine(telegram_app, self.memory)
         self.jt_optimizer = JustTechOptimizer(telegram_app, self.justtech)
-        log.info("Phase 3+5 modules initialized — PULSE Scheduler · REACH AutoResponder · INTEL LiveBrief · Lead Engine · JustTech Optimizer")
+        self.creova_os = CREOVAOSScheduler(
+            telegram_app, self.memory, self.creova_media, self.pulse, self.reach
+        )
+        log.info("Phase 3+5 modules initialized — PULSE Scheduler · REACH AutoResponder · INTEL LiveBrief · Lead Engine · JustTech Optimizer · CREOVA OS Scheduler")
 
     async def route_command(self, text: str, chat_id: str) -> str:
-        """Routes Justin's commands to the right agent."""
+        """Entry point for every message. This is the closed-loop safety
+        gatekeeper — it runs BEFORE any routing/agent logic:
+          1. If the message is a CONFIRM token → execute the pending action.
+          2. Else, any pending proposal is cancelled (no stale approvals).
+          3. If the message matches a destructive pattern → don't execute
+             it, propose it instead and require an explicit CONFIRM reply.
+          4. Otherwise → fall through to normal routing (_execute).
+        This makes MEMORY.md's "never delete without confirming twice"
+        rule a code guarantee, not just a system-prompt instruction the
+        model has to remember to follow.
+        """
+        confirm_token = parse_confirm(text)
+        if confirm_token:
+            return await self.guard.confirm(confirm_token)
+
+        if self.guard.has_pending():
+            await self.guard.discard_all_pending(reason="new_message_received")
+
+        # ── Outcome logging: "outcome <id> key=value key=value" ─
+        if text.lower().startswith("outcome "):
+            return await self._handle_outcome_command(text)
+
+        # ── Cost visibility ─────────────────────────────────────
+        if text.lower().strip() in ("/costs", "costs", "spend", "ai spend", "token usage"):
+            return self._format_cost_report()
+
+        if looks_destructive(text):
+            async def _confirmed_executor(_text=text, _chat_id=chat_id):
+                return await self._execute(_text, _chat_id)
+            return await self.guard.propose(
+                description=text.strip()[:200],
+                agent="AKILI",
+                executor=_confirmed_executor,
+                requested_by_text=text,
+            )
+
+        return await self._execute(text, chat_id)
+
+    def _format_cost_report(self) -> str:
+        s = usage_log.today_summary()
+        lines = [f"💰 AKILI — AI Spend Today ({s['date']})",
+                  "━━━━━━━━━━━━━━━━━━━━",
+                  f"Total: ${s['total_cost_usd']:.4f} across {s['total_calls']} calls"
+                  + (f" · {s['errors']} errors" if s['errors'] else "")]
+        for agent, a in sorted(s["by_agent"].items(), key=lambda kv: -kv[1]["cost_usd"]):
+            lines.append(f"▸ {agent}: ${a['cost_usd']:.4f} ({a['calls']} calls, "
+                         f"{a['input_tokens']+a['output_tokens']:,} tokens)"
+                         + (f" — {a['errors']} errors" if a["errors"] else ""))
+        lines.append("⚡ Estimates from published Anthropic pricing, not a billing source of truth.")
+        return "\n".join(lines)
+
+    async def _format_outcome_nudge(self) -> str:
+        """Once a day: which of AKILI's own actions (posts, auto-replies) never
+        got outcome data reported back. Without this, outcome_tracker is just
+        a write-only log — this is the step that closes the loop into something
+        Justin actually has to look at."""
+        stale = []
+        for agent in ("PULSE", "REACH", "AMPLIFY", "INTEL"):
+            pending = await outcome_tracker.pending_without_outcome(agent, older_than_hours=24)
+            stale.extend(pending)
+        if not stale:
+            return ""
+        stale.sort(key=lambda r: r["ts"])
+        lines = ["🔁 <b>Unreported outcomes</b> (24h+ with no result logged):"]
+        for r in stale[:8]:
+            lines.append(f"▸ <code>{r['id']}</code> [{r['agent']}] {r['summary'][:55]}")
+        if len(stale) > 8:
+            lines.append(f"...and {len(stale) - 8} more.")
+        lines.append("Reply: <code>outcome [id] key=value</code> — or ignore if it doesn't matter.")
+        return "\n".join(lines)
+
+    async def _handle_outcome_command(self, text: str) -> str:
+        """Parses: outcome <action_id> key=value key=value ...
+        Feeds real-world results back into the outcome tracker so agents
+        can learn what actually worked — same pattern JUSTTECH already
+        uses for YouTube episodes, generalized to any agent's actions."""
+        parts = text.split()
+        if len(parts) < 3:
+            return ("Usage: outcome <action_id> key=value key=value ...\n"
+                    "Example: outcome a1b2c3d4 likes=340 saves=12 reach=5200")
+        action_id = parts[1]
+        metrics = {}
+        for kv in parts[2:]:
+            if "=" not in kv:
+                continue
+            k, v = kv.split("=", 1)
+            try:
+                v = float(v) if "." in v else int(v)
+            except ValueError:
+                pass
+            metrics[k] = v
+        if not metrics:
+            return "⚠️ No key=value pairs found. Example: outcome a1b2c3d4 likes=340"
+        ok = await outcome_tracker.log_outcome(action_id, metrics)
+        if not ok:
+            return f"⚠️ No tracked action with id {action_id}."
+        return f"📊 Logged outcome for {action_id}: {metrics}\n⚡ This feeds future generation for that agent."
+
+    async def _execute(self, text: str, chat_id: str) -> str:
+        """The original command router — picks which agent handles a
+        message. Only reached after route_command's safety gate."""
         text_lower = text.lower()
 
         # ── Phase 5.1: Content & Consulting Engine ─────────────
@@ -265,6 +388,74 @@ class AkiliCore:
                 topic = text[len(pfx):].strip()
                 if topic:
                     return await self.justtech.generate_episode(topic)
+
+        # ── CREOVA MEDIA: agency ops (inquiry, proposal, invoice, capacity, follow-up) ──
+        for pfx in ("/media ", "media "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.handle(text[len(pfx):].strip())
+
+        for pfx in ("/inquiry ", "inquiry "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.handle(f"New client inquiry — triage it:\n{text[len(pfx):].strip()}")
+
+        for pfx in ("/proposal ", "proposal "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.handle(f"Draft a full proposal for:\n{text[len(pfx):].strip()}")
+
+        for pfx in ("/followup ", "followup "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.handle(f"Draft a post-delivery follow-up for:\n{text[len(pfx):].strip()}")
+
+        if text_lower in ("/invoice", "run invoice chaser"):
+            return await self.creova_media.run_invoice_chaser()
+
+        if text_lower in ("/capacity", "capacity check"):
+            return await self.creova_media.run_capacity_check()
+        for pfx in ("/capacity ", "capacity check "):
+            if text_lower.startswith(pfx):
+                return await self.creova_media.run_capacity_check(text[len(pfx):].strip())
+
+        # ── CREOVA MEDIA: on-demand triggers for the weekly automations ──
+        if text_lower in ("/content", "content calendar next week"):
+            return await self.pulse.handle("Build next week's full content calendar per the Friday content-build routine.")
+
+        for pfx in ("/captions ", "captions for "):
+            if text_lower.startswith(pfx):
+                return await self.pulse.handle(f"Generate a caption + hashtag batch for: {text[len(pfx):].strip()}")
+
+        if text_lower in ("/newsletter", "draft newsletter"):
+            return await self.reach.handle("Draft this month's CREOVA newsletter per the monthly newsletter routine.")
+
+        if text_lower in ("/outreach", "outreach batch"):
+            return await self.reach.handle("Generate this week's 10-DM outreach batch per the Tuesday outreach routine.")
+
+        if text_lower in ("/close", "financial close", "monthly close"):
+            return await self.shield.handle("Run the monthly financial close per the CREOVA OS routine.")
+
+        if text_lower in ("/grants", "grant deadlines"):
+            return await self.shield.handle("Run the grant + compliance deadline check.")
+
+        # ── AMPLIFY: SEEN platform + CREOVA Fashion ──
+        for pfx in ("/cmf ", "cmf "):
+            if text_lower.startswith(pfx):
+                return await self.amplify.handle(f"Draft this CMF grant application section: {text[len(pfx):].strip()}")
+
+        for pfx in ("/seen ", "seen "):
+            if text_lower.startswith(pfx):
+                return await self.amplify.handle(f"SEEN platform ops: {text[len(pfx):].strip()}")
+
+        for pfx in ("/drop ", "fashion drop "):
+            if text_lower.startswith(pfx):
+                return await self.amplify.handle(f"Build a CREOVA Fashion drop campaign: {text[len(pfx):].strip()}")
+
+        for pfx in ("/vip ",):
+            if text_lower.startswith(pfx):
+                return await self.amplify.handle(f"Generate the VIP early-access message for this drop: {text[len(pfx):].strip()}")
+
+        # ── INTEL: CREOVA Fashion supply chain check ──
+        for pfx in ("/supply ", "supply check "):
+            if text_lower.startswith(pfx):
+                return await self.intel.handle(f"Supply chain status check with FX impact: {text[len(pfx):].strip()}")
 
         # ── Phase 3: PULSE approval flow (POST / EDIT / SKIP) ─
         if self.scheduler and text.upper().startswith(("POST ", "EDIT ", "SKIP ")):
@@ -427,11 +618,10 @@ class AkiliCore:
             return await self.general_handle(text)
 
     async def general_handle(self, text: str) -> str:
-        from anthropic import AsyncAnthropic
-        client = AsyncAnthropic(api_key=ANTHROPIC_KEY)
+        client = self._general_client
         try:
             response = await client.messages.create(
-                model="claude-opus-4-5",
+                model=GENERAL_MODEL,
                 max_tokens=1000,
                 system=self.identity,
                 messages=[{"role": "user", "content": text}]
@@ -490,6 +680,16 @@ class AkiliCore:
             if now.hour == 8 and now.minute == 0:
                 try:
                     brief = await self.intel.daily_brief()
+                    try:
+                        brief = f"{brief}\n\n{self._format_cost_report()}"
+                    except Exception:
+                        log.exception("[BRIEF] Failed to append cost summary")
+                    try:
+                        nudge = await self._format_outcome_nudge()
+                        if nudge:
+                            brief = f"{brief}\n\n{nudge}"
+                    except Exception:
+                        log.exception("[BRIEF] Failed to append outcome nudge")
                     await app.bot.send_message(
                         chat_id=JUSTIN_CHAT_ID,
                         text=brief
@@ -533,6 +733,10 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🔍 <b>INTEL</b> — Research · VC Tracker · Leads\n"
         "🔊 <b>AMPLIFY</b> — Music · Streams · Campaigns\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
+        "▸ <code>/menu</code> — tap-through agent menu (no typing)\n"
+        "▸ <code>/costs</code> — today's AI spend by agent\n"
+        "▸ <code>outcome [id] key=value</code> — log real results back in\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
         "📋 <b>Key Commands</b>\n"
         "▸ <code>POST/EDIT/SKIP [id]</code> — approve posts\n"
         "▸ <code>/pending</code> — posts awaiting approval\n"
@@ -550,6 +754,15 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "▸ <code>competitor [product]</code> — competitor intel\n"
         "▸ <code>health check</code> — all platform status\n"
         "▸ <code>snapchat plan</code> — today's Snap content\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🎨 <b>CREOVA MEDIA — Agency Ops (NEW)</b>\n"
+        "▸ <code>media [message]</code> — talk to the agency ops agent\n"
+        "▸ <code>inquiry [details]</code> · <code>proposal [details]</code>\n"
+        "▸ <code>/invoice</code> · <code>/capacity</code> · <code>followup [client] [service]</code>\n"
+        "▸ <code>/content</code> · <code>captions for [shoot]</code> · <code>/newsletter</code> · <code>/outreach</code>\n"
+        "▸ <code>/close</code> · <code>/grants</code> — financial close, grant deadlines\n"
+        "▸ <code>cmf [section]</code> · <code>seen [query]</code> · <code>fashion drop [details]</code> · <code>/vip [drop]</code>\n"
+        "▸ <code>supply check [order list]</code> — supply chain + FX impact\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "🎙 <b>Jarvis Voice + 🎵 Music (NEW)</b>\n"
         "▸ send a 🎙 <b>voice note</b> — talk to AKILI, hear it reply\n"
@@ -589,6 +802,67 @@ async def pending(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             "📡 <b>PULSE</b> — Scheduler initializing...",
             parse_mode="HTML"
         )
+
+# ── /menu — grouped command surface via inline keyboard ────────
+# Command sprawl (15+ slash commands + natural-language) is a real
+# discoverability problem on a phone. This groups the highest-use
+# action per agent behind one tap; everything else still works as
+# typed commands/natural language exactly as before.
+_MENU_ACTIONS = {
+    "menu_shield":  "security status",
+    "menu_pulse":   "content calendar this week",
+    "menu_reach":   "pending posts",
+    "menu_intel":   "vc tracker",
+    "menu_amplify": "music strategy",
+    "menu_status":  "/status",
+    "menu_costs":   "/costs",
+}
+
+def _menu_keyboard() -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton("🛡️ SHIELD", callback_data="menu_shield"),
+         InlineKeyboardButton("📡 PULSE",  callback_data="menu_pulse")],
+        [InlineKeyboardButton("📨 REACH",  callback_data="menu_reach"),
+         InlineKeyboardButton("🔍 INTEL",  callback_data="menu_intel")],
+        [InlineKeyboardButton("📈 AMPLIFY", callback_data="menu_amplify")],
+        [InlineKeyboardButton("📊 Status", callback_data="menu_status"),
+         InlineKeyboardButton("💰 Costs",  callback_data="menu_costs")],
+    ]
+    return InlineKeyboardMarkup(rows)
+
+async def menu_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
+        return
+    await update.message.reply_text(
+        "🧭 <b>AKILI — Quick Menu</b>\n━━━━━━━━━━━━━━━━━━━━\nTap an agent for its default action, "
+        "or just type/speak naturally as always.",
+        parse_mode="HTML",
+        reply_markup=_menu_keyboard(),
+    )
+
+async def costs_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_chat.id) != str(JUSTIN_CHAT_ID):
+        return
+    await update.message.reply_text(akili._format_cost_report())
+
+async def menu_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if str(query.message.chat.id) != str(JUSTIN_CHAT_ID):
+        await query.answer()
+        return
+    await query.answer()
+    command_text = _MENU_ACTIONS.get(query.data)
+    if not command_text:
+        return
+    if command_text.startswith("/status"):
+        s = await akili.shield.status()
+        await query.message.reply_text(f"📊 <b>AKILI STATUS</b>\n━━━━━━━━━━━━━━━━━━━━\n\n{s}", parse_mode="HTML")
+        return
+    if command_text.startswith("/costs"):
+        await query.message.reply_text(akili._format_cost_report())
+        return
+    response = await akili.route_command(command_text, JUSTIN_CHAT_ID)
+    await query.message.reply_text(response, parse_mode="HTML")
 
 async def _deliver(update: Update, response: str, was_voice: bool = False):
     """Send a response as text (chunked) and, when appropriate, a spoken voice note."""
@@ -891,6 +1165,9 @@ async def main():
     app.add_handler(CommandHandler("jt_topics", jt_topics_cmd))
     app.add_handler(CommandHandler("jt_retro", jt_retro_cmd))     # run learning loop now
     app.add_handler(CommandHandler("jt_metrics", jt_metrics_cmd)) # feed performance back in
+    app.add_handler(CommandHandler("menu", menu_cmd))             # grouped inline-keyboard command surface
+    app.add_handler(CommandHandler("costs", costs_cmd))           # AI spend visibility
+    app.add_handler(CallbackQueryHandler(menu_callback, pattern="^menu_"))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))        # Jarvis voice in (voice notes)
     app.add_handler(MessageHandler(filters.AUDIO, handle_music_file))   # AMPLIFY: music file → visualizer
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -919,6 +1196,9 @@ async def main():
 
         # JustTech weekly improvement loop
         asyncio.create_task(akili.jt_optimizer.run())
+
+        # CREOVA Media weekly automation engine
+        asyncio.create_task(akili.creova_os.run())
 
         # Keep running until interrupted
         stop = asyncio.Event()
